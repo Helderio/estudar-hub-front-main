@@ -1,8 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff, Github, Loader2, ChevronRight, ChevronLeft, Check, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { institutionService } from '@/services/institutionService';
+import { unwrapApiResponseOrRaw, type PageResponse } from '@/services/apiResponse';
+
+type InstitutionOption = {
+  id: string; // backend envia como string (normalmente numero em string)
+  nome: string;
+};
+
+function getApiErrorMessage(err: unknown): string | undefined {
+  if (!err || typeof err !== 'object') return undefined;
+  if (!('response' in err)) return undefined;
+
+  const response = (err as { response?: unknown }).response;
+  if (!response || typeof response !== 'object') return undefined;
+  if (!('data' in response)) return undefined;
+
+  const data = (response as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') return undefined;
+  if (!('message' in data)) return undefined;
+
+  const message = (data as { message?: unknown }).message;
+  return typeof message === 'string' ? message : undefined;
+}
 
 const steps = [
   { title: 'Dados Básicos', subtitle: 'Informações pessoais' },
@@ -11,12 +34,9 @@ const steps = [
   { title: 'Opcional', subtitle: 'Informações adicionais' },
 ];
 
-const institutions = [
-  'Universidade Katyavala Bwila',
-  'ISCED Benguela',
-  'Universidade Mandume',
-  'Instituto Superior Politécnico de Benguela',
-  'Universidade Jean Piaget',
+const institutionFallback: InstitutionOption[] = [
+  // Backend seeds at least `id=1` (V3__seed_default_institution.sql).
+  { id: '1', nome: 'EstudarHub Default Institution' },
 ];
 
 const courses = [
@@ -37,6 +57,7 @@ const Register = () => {
   const [step, setStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [institutionOptions, setInstitutionOptions] = useState<InstitutionOption[]>(institutionFallback);
 // Estado do form — adiciona username
 const [form, setForm] = useState({
   username: '',
@@ -48,6 +69,23 @@ const [form, setForm] = useState({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await institutionService.getAll({ size: 200 });
+        const page = unwrapApiResponseOrRaw<PageResponse<InstitutionOption>>(res);
+        const content = page?.content || [];
+        if (!cancelled && content.length > 0) setInstitutionOptions(content);
+      } catch {
+        // Mantem fallback para UX, mas o backend precisa estar vivo para registrar.
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
 
   const validateStep = () => {
     const e: Record<string, string> = {};
@@ -66,6 +104,7 @@ const [form, setForm] = useState({
     if (step === 2) {
       if (!form.institution) e.institution = 'Instituição é obrigatória';
       if (!form.course) e.course = 'Curso é obrigatório';
+      if (!form.year) e.year = 'Ano académico é obrigatório';
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -78,8 +117,14 @@ const [form, setForm] = useState({
   };
 
 // handleSubmit — mapeia para o backend
-const handleSubmit = async () => {
-  try {
+	const handleSubmit = async () => {
+	  try {
+    const institutionId = Number(form.institution);
+    if (!Number.isFinite(institutionId) || institutionId <= 0) {
+      toast({ title: 'Selecione uma instituição válida.', variant: 'destructive' });
+      return;
+    }
+
     await register({
       username: form.username,
       nome: form.name,
@@ -93,15 +138,15 @@ const handleSubmit = async () => {
       curso: form.course,
       anoAcademico: form.year,
       role: form.userType === 'student' ? 'ESTUDANTE' : 'PROFESSOR',
-      institutionId: 1, // temporário — ver abaixo
+      institutionId,
     });
-    toast({ title: 'Conta criada com sucesso!' });
-    navigate('/dashboard');
-  } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Erro ao criar conta';
-    toast({ title: msg, variant: 'destructive' });
-  }
-};
+	    toast({ title: 'Conta criada com sucesso!' });
+	    navigate('/dashboard');
+	  } catch (err: unknown) {
+	    const msg = getApiErrorMessage(err) || 'Erro ao criar conta';
+	    toast({ title: msg, variant: 'destructive' });
+	  }
+	};
 
   const handleOAuth = async (provider: 'google' | 'github') => {
     try {
@@ -190,6 +235,18 @@ const handleSubmit = async () => {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Username</label>
+              <input
+                type="text"
+                value={form.username}
+                onChange={e => update('username', e.target.value)}
+                className={inputClass}
+                placeholder="ex: joaosilva123"
+              />
+              {errors.username && <p className="text-xs text-destructive mt-1">{errors.username}</p>}
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Nome completo</label>
               <input type="text" value={form.name} onChange={e => update('name', e.target.value)} className={inputClass} placeholder="Seu nome completo" />
               {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
@@ -233,7 +290,7 @@ const handleSubmit = async () => {
               <label className="block text-sm font-medium text-foreground mb-1.5">Instituição</label>
               <select value={form.institution} onChange={e => update('institution', e.target.value)} className={selectClass}>
                 <option value="">Selecione a instituição...</option>
-                {institutions.map(i => <option key={i} value={i}>{i}</option>)}
+                {institutionOptions.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
               </select>
               {errors.institution && <p className="text-xs text-destructive mt-1">{errors.institution}</p>}
             </div>
@@ -251,6 +308,7 @@ const handleSubmit = async () => {
                 <option value="">Selecione...</option>
                 {['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
+              {errors.year && <p className="text-xs text-destructive mt-1">{errors.year}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Tipo de utilizador</label>

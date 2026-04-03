@@ -22,11 +22,10 @@ export function unwrapApiResponse<T>(res: AxiosResponse<ApiResponse<T>>): T {
   return res.data.data;
 }
 
-export function unwrapApiResponseOrRaw<T>(res: AxiosResponse<any>): T {
+export function unwrapApiResponseOrRaw<T>(res: AxiosResponse<unknown>): T {
   const body = res?.data;
   if (body && typeof body === 'object' && 'success' in body && 'data' in body) {
     return (body as ApiResponse<T>).data;
   }
   return body as T;
 }
-

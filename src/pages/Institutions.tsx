@@ -4,9 +4,32 @@ import { SearchBar } from '@/components/SearchBar';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { institutionService } from '@/services/institutionService';
-import { unwrapApiResponseOrRaw } from '@/services/apiResponse';
+import { unwrapApiResponseOrRaw, type PageResponse } from '@/services/apiResponse';
 import { Building2, Globe, ArrowRight } from 'lucide-react';
 import type { Institution } from '@/types';
+
+function getApiErrorMessage(err: unknown): string | undefined {
+  if (!err || typeof err !== 'object') return undefined;
+  if (!('response' in err)) return undefined;
+
+  const response = (err as { response?: unknown }).response;
+  if (!response || typeof response !== 'object') return undefined;
+  if (!('data' in response)) return undefined;
+
+  const data = (response as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') return undefined;
+  if (!('message' in data)) return undefined;
+
+  const message = (data as { message?: unknown }).message;
+  return typeof message === 'string' ? message : undefined;
+}
+
+function isPageResponse<T>(value: unknown): value is PageResponse<T> {
+  if (!value || typeof value !== 'object') return false;
+  if (!('content' in value)) return false;
+  const content = (value as { content?: unknown }).content;
+  return Array.isArray(content);
+}
 
 const Institutions = () => {
   const [search, setSearch] = useState('');
@@ -20,13 +43,13 @@ const Institutions = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await institutionService.getAll();
-        const data = unwrapApiResponseOrRaw<Institution[]>(res);
+        const res = await institutionService.getAll({ size: 200 });
+        const data = unwrapApiResponseOrRaw<PageResponse<Institution>>(res);
         if (!alive) return;
-        setInstitutions(Array.isArray(data) ? data : []);
-      } catch (e: any) {
+        setInstitutions(isPageResponse(data) ? data.content : []);
+      } catch (e: unknown) {
         if (!alive) return;
-        setError(e?.response?.data?.message ?? 'Falha ao carregar instituições.');
+        setError(getApiErrorMessage(e) ?? 'Falha ao carregar instituições.');
       } finally {
         if (!alive) return;
         setLoading(false);

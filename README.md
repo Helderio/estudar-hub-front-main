@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
+# EstudarHub Frontend
 
-## Project info
+Frontend web do EstudarHub (Vite + React + TypeScript) consumindo a API Spring Boot.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Deploy atual: `https://estudarhub.vercel.app/`
 
-## How can I edit this code?
+## Stack
 
-There are several ways of editing your application.
+- Vite + React + TypeScript
+- TailwindCSS + shadcn-ui
+- Axios para HTTP
+- Auth via JWT em `localStorage` (header `Authorization: Bearer <token>`)
 
-**Use Lovable**
+## Rodar Local
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Requisitos: Node 18+ (ou Bun) e npm.
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Variaveis de Ambiente
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Arquivo `.env`:
 
-**Use GitHub Codespaces**
+- `VITE_API_URL`: base URL da API (inclui `/api`)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Exemplo:
 
-## What technologies are used for this project?
+```bash
+VITE_API_URL=https://estudarhunbackend.onrender.com/api
+```
 
-This project is built with:
+## Como o Auth Funciona
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Login/Register chamam `/auth/login` e `/auth/register`.
+- O token vem em `data.token`.
+- O axios interceptor ([api.ts](./src/services/api.ts)) injeta o token em cada request.
+- Em `401`, o frontend limpa o token e redireciona para `/login`.
 
-## How can I deploy this project?
+## Contrato de API Usado Pelo Frontend
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Todos os calls estao em `src/services/*.ts` e assumem a base `VITE_API_URL`.
 
-## Can I connect a custom domain to my Lovable project?
+Principais endpoints:
 
-Yes, you can!
+- Auth:
+  - `POST /auth/register`
+  - `POST /auth/login`
+- Instituicoes:
+  - `GET /institutions` (paginado; `data.content`)
+  - `GET /institutions/{id}`
+- Categorias:
+  - `GET /categories`
+  - `GET /categories/{id}`
+- Projetos:
+  - `GET /projects`
+  - `GET /projects/{id}`
+  - `POST /projects` (multipart)
+  - `PUT /projects/{id}` (multipart)
+  - `DELETE /projects/{id}`
+  - `POST /projects/{id}/comments`
+  - `POST /projects/{id}/participate`
+  - `POST /projects/{id}/invite`
+- Convites:
+  - `GET /invitations/me`
+  - `PUT /invitations/{id}/accept`
+  - `PUT /invitations/{id}/reject`
+- Eventos:
+  - `GET /events`
+  - `GET /events/{id}`
+  - `POST /events/{id}/participate`
+  - `DELETE /events/{id}/participate`
+- Chat:
+  - `GET /chats`
+  - `GET /chats/{id}`
+  - `GET /chats/{id}/messages`
+  - `POST /chats/{id}/messages`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Fluxo de Registo (Register)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Arquivo: `src/pages/Register.tsx`
+
+- Step "Dados Academicos" carrega as instituicoes do backend via `GET /institutions`.
+- O valor do select e o `institutionId` (string numerica) e e convertido para `number` antes de enviar.
+- `Ano academico` e validado no frontend porque o backend exige `anoAcademico`.
+
+## Backend Checklist (Para Ficar 100% Conectado)
+
+- Backend precisa estar acessivel publicamente e com CORS liberado para o dominio da Vercel.
+- Endpoints acima precisam existir e responder no formato `{ success, message, data }`.
+- O banco no Render precisa estar com as migrations aplicadas (principalmente `project_invitations`).
+
+Documentacao detalhada do backend (API, DB, security, deploy): ver `docs/` no repo do backend.
