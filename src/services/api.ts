@@ -1,7 +1,19 @@
 import axios from 'axios';
 
+function getBaseUrl() {
+  // Prefer explicit build-time config.
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string') return envUrl;
+
+  // In prod on Vercel we can rely on rewrites: /api -> Render backend.
+  if (import.meta.env.PROD) return '/api';
+
+  // Local dev default.
+  return 'http://localhost:8080/api';
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  baseURL: getBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
 });
 

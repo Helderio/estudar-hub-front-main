@@ -1,21 +1,65 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { RankBadge } from '@/components/RankBadge';
-import type { Rank } from '@/types';
+import type { Project, Rank } from '@/types';
 import { PROJECT_CATEGORIES } from '@/types';
+import { projectService } from '@/services/projectService';
+import { unwrapApiResponseOrRaw } from '@/services/apiResponse';
 
 const ranks: Rank[] = ['E', 'D', 'C', 'B', 'A', 'S'];
+
+function getApiErrorMessage(err: unknown): string | undefined {
+  if (!err || typeof err !== 'object') return undefined;
+  if (!('response' in err)) return undefined;
+
+  const response = (err as { response?: unknown }).response;
+  if (!response || typeof response !== 'object') return undefined;
+  if (!('data' in response)) return undefined;
+
+  const data = (response as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') return undefined;
+  if (!('message' in data)) return undefined;
+
+  const message = (data as { message?: unknown }).message;
+  return typeof message === 'string' ? message : undefined;
+}
 
 const CreateProject = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ title: '', category: '', rank: '' as Rank | '', description: '', repositoryUrl: '' });
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
   const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50';
+
+  const coverLabel = useMemo(() => {
+    if (coverFile?.name) return coverFile.name;
+    return 'Clique ou arraste uma imagem';
+  }, [coverFile]);
+
+  const pdfLabel = useMemo(() => {
+    if (pdfFile?.name) return pdfFile.name;
+    return 'Arraste o PDF aqui (ou clique para selecionar)';
+  }, [pdfFile]);
+
+  const handleCoverChange = (file: File | undefined) => {
+    if (!file) return;
+    setCoverFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setCoverPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handlePdfChange = (file: File | undefined) => {
+    if (!file) return;
+    setPdfFile(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,11 +67,29 @@ const CreateProject = () => {
       toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
       return;
     }
-    setIsLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    toast({ title: 'Projeto publicado com sucesso!' });
-    setIsLoading(false);
-    navigate('/dashboard');
+    try {
+      setIsLoading(true);
+
+      const fd = new FormData();
+      fd.append('title', form.title);
+      fd.append('description', form.description);
+      fd.append('category', form.category); // backend aceita por nome (fallback)
+      fd.append('rank', form.rank);
+      if (form.repositoryUrl) fd.append('repositoryUrl', form.repositoryUrl);
+      if (coverFile) fd.append('coverImage', coverFile);
+      if (pdfFile) fd.append('pdfUrl', pdfFile);
+
+      const res = await projectService.create(fd);
+      const created = unwrapApiResponseOrRaw<Project>(res);
+
+      toast({ title: 'Projeto publicado com sucesso!' });
+      if (created?.id != null) navigate(`/projects/${created.id}`);
+      else navigate('/dashboard');
+    } catch (err: unknown) {
+      toast({ title: getApiErrorMessage(err) ?? 'Erro ao publicar projeto.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,10 +101,20 @@ const CreateProject = () => {
         {/* Cover upload */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">Imagem de capa</label>
-          <div className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors">
-            <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Clique ou arraste uma imagem</p>
-          </div>
+          <label className="block border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors">
+            {coverPreview ? (
+              <img src={coverPreview} alt="Capa" className="w-full max-h-56 object-cover rounded-lg mb-3" />
+            ) : (
+              <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
+            )}
+            <p className="text-sm text-muted-foreground">{coverLabel}</p>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleCoverChange(e.target.files?.[0])}
+            />
+          </label>
         </div>
 
         <div>
@@ -78,10 +150,16 @@ const CreateProject = () => {
         {/* PDF upload */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">PDF (TCC/Artigo)</label>
-          <div className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors">
+          <label className="block border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors">
             <Upload size={20} className="mx-auto text-muted-foreground mb-1" />
-            <p className="text-xs text-muted-foreground">Arraste o PDF aqui</p>
-          </div>
+            <p className="text-xs text-muted-foreground">{pdfLabel}</p>
+            <input
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => handlePdfChange(e.target.files?.[0])}
+            />
+          </label>
         </div>
 
         <div>

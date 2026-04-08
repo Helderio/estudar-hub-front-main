@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { eventService } from '@/services/eventService';
+import { institutionService } from '@/services/institutionService';
+import { unwrapApiResponseOrRaw, type PageResponse } from '@/services/apiResponse';
 
 const eventTypes = [
   { value: 'hackathon', label: '💻 Hackathon' },
@@ -10,23 +13,54 @@ const eventTypes = [
   { value: 'games', label: '⚽ Jogos Universitários' },
 ];
 
-const institutions = [
-  'Universidade Katyavala Bwila',
-  'ISCED Benguela',
-  'Universidade Mandume',
-  'Instituto Superior Politécnico de Benguela',
+type InstitutionOption = { id: string; nome: string };
+
+const institutionFallback: InstitutionOption[] = [
+  { id: '1', nome: 'EstudarHub Default Institution' },
 ];
+
+function getApiErrorMessage(err: unknown): string | undefined {
+  if (!err || typeof err !== 'object') return undefined;
+  if (!('response' in err)) return undefined;
+
+  const response = (err as { response?: unknown }).response;
+  if (!response || typeof response !== 'object') return undefined;
+  if (!('data' in response)) return undefined;
+
+  const data = (response as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') return undefined;
+  if (!('message' in data)) return undefined;
+
+  const message = (data as { message?: unknown }).message;
+  return typeof message === 'string' ? message : undefined;
+}
 
 const CreateEvent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [institutionOptions, setInstitutionOptions] = useState<InstitutionOption[]>(institutionFallback);
   const [form, setForm] = useState({
-    title: '', description: '', date: '', location: '', institution: '', type: '',
+    title: '', description: '', date: '', location: '', institutionId: '', type: '',
   });
 
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
   const inputClass = 'w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 text-sm';
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await institutionService.getAll({ size: 200 });
+        const page = unwrapApiResponseOrRaw<PageResponse<InstitutionOption>>(res);
+        const content = page?.content || [];
+        if (!cancelled && content.length > 0) setInstitutionOptions(content);
+      } catch {
+        // fallback
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,11 +68,24 @@ const CreateEvent = () => {
       toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
       return;
     }
-    setIsLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    toast({ title: 'Evento criado com sucesso!' });
-    setIsLoading(false);
-    navigate('/events');
+    try {
+      setIsLoading(true);
+      const institutionIdNum = form.institutionId ? Number(form.institutionId) : undefined;
+      await eventService.create({
+        title: form.title,
+        description: form.description || undefined,
+        date: form.date,
+        location: form.location,
+        institutionId: Number.isFinite(institutionIdNum as number) ? (institutionIdNum as number) : undefined,
+        type: form.type,
+      });
+      toast({ title: 'Evento criado com sucesso!' });
+      navigate('/events');
+    } catch (err: unknown) {
+      toast({ title: getApiErrorMessage(err) ?? 'Erro ao criar evento.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -80,9 +127,9 @@ const CreateEvent = () => {
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Instituição</label>
-            <select value={form.institution} onChange={e => update('institution', e.target.value)} className={inputClass}>
+            <select value={form.institutionId} onChange={e => update('institutionId', e.target.value)} className={inputClass}>
               <option value="">Selecione...</option>
-              {institutions.map(i => <option key={i} value={i}>{i}</option>)}
+              {institutionOptions.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
             </select>
           </div>
           <div>

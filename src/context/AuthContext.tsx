@@ -13,6 +13,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithGithub: () => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  updateUser: (profile: User) => void;
   logout: () => void;
 }
 
@@ -75,6 +76,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const updateUser = useCallback((profile: User) => {
+    localStorage.setItem('user', JSON.stringify(profile));
+    setUser(profile);
+  }, []);
+
   const loginWithGoogle = useCallback(async () => {
     throw new Error('Google login não disponível ainda.');
   }, []);
@@ -98,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loginWithGoogle,
       loginWithGithub,
       register,
+      updateUser,
       logout,
     }}>
       {children}
