@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const saveSession = (profile: User, token: string) => {
-    localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(profile));
     setUser(profile);
   };
@@ -58,8 +57,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const res = await authService.login({ email, password });
-      const { token, profile } = res.data.data;
-      saveSession(profile, token);
+      const { profile, token } = res.data.data as any;
+      // token ignored (session cookie is the auth mechanism now)
+      saveSession(profile, token ?? '');
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +69,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const res = await authService.register(data);
-      const { token, profile } = res.data.data;
-      saveSession(profile, token);
+      const { profile, token } = res.data.data as any;
+      saveSession(profile, token ?? '');
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   }, []);
