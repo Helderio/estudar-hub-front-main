@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff, Github, Loader2, ChevronRight, ChevronLeft, Check, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { institutionService } from '@/services/institutionService';
+import { courseService } from '@/services/courseService';
 import { unwrapApiResponseOrRaw, type PageResponse } from '@/services/apiResponse';
 
 type InstitutionOption = {
@@ -39,15 +40,12 @@ const institutionFallback: InstitutionOption[] = [
   { id: '1', nome: 'EstudarHub Default Institution' },
 ];
 
-const courses = [
-  'Engenharia Informática',
-  'Direito',
-  'Medicina',
-  'Economia',
-  'Educação',
-  'Psicologia',
-  'Gestão de Empresas',
-  'Ciências da Computação',
+type CourseOption = { id: number; nome: string; area?: string };
+
+const courseFallback: CourseOption[] = [
+  { id: 1, nome: 'Engenharia Informatica', area: 'Engenharia' },
+  { id: 2, nome: 'Direito', area: 'Ciencias Sociais' },
+  { id: 3, nome: 'Medicina', area: 'Saude' },
 ];
 
 const Register = () => {
@@ -58,6 +56,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [institutionOptions, setInstitutionOptions] = useState<InstitutionOption[]>(institutionFallback);
+  const [courseOptions, setCourseOptions] = useState<CourseOption[]>(courseFallback);
 // Estado do form — adiciona username
 const [form, setForm] = useState({
   username: '',
@@ -84,6 +83,21 @@ const [form, setForm] = useState({
       }
     })();
 
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await courseService.getAll({ size: 200 });
+        const page = unwrapApiResponseOrRaw<PageResponse<CourseOption>>(res);
+        const content = page?.content || [];
+        if (!cancelled && content.length > 0) setCourseOptions(content);
+      } catch {
+        // fallback
+      }
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -298,7 +312,7 @@ const [form, setForm] = useState({
               <label className="block text-sm font-medium text-foreground mb-1.5">Curso</label>
               <select value={form.course} onChange={e => update('course', e.target.value)} className={selectClass}>
                 <option value="">Selecione o curso...</option>
-                {courses.map(c => <option key={c} value={c}>{c}</option>)}
+                {courseOptions.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
               </select>
               {errors.course && <p className="text-xs text-destructive mt-1">{errors.course}</p>}
             </div>

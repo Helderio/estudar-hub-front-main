@@ -146,6 +146,13 @@ export const PROJECT_CATEGORIES = [
   'DevOps',
   'Banco de Dados',
   'Jogos',
+  'Sistemas de Informação',
+  'Redes & Infraestrutura',
+  'UX/UI Design',
+  'Gestão & Negócios',
+  'Educação',
+  'Saúde',
+  'Direito',
   'Outro',
 ] as const;
 
