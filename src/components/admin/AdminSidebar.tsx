@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
+  BookOpen,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ const navItems = [
   { to: '/admin/users', icon: Users, label: 'Usuários' },
   { to: '/admin/projects', icon: FolderKanban, label: 'Projetos' },
   { to: '/admin/institutions', icon: Building2, label: 'Instituições' },
+  { to: '/admin/courses', icon: BookOpen, label: 'Cursos' },
   { to: '/admin/events', icon: CalendarDays, label: 'Eventos' },
   { to: '/admin/categories', icon: Tag, label: 'Categorias' },
   { to: '/admin/rankings', icon: Trophy, label: 'Rankings' },

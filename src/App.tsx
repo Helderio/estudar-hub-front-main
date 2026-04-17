@@ -24,6 +24,10 @@ import InstitutionDetails from "./pages/InstitutionDetails";
 import Chat from "./pages/Chat";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminInstitutions from "./pages/admin/AdminInstitutions";
+import AdminCourses from "./pages/admin/AdminCourses";
+import AdminCategories from "./pages/admin/AdminCategories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +38,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  const role = (user as any)?.role as string | undefined;
+  if (role !== "ADMIN") return <Navigate to="/dashboard" replace />;
+
+  return <>{children}</>;
+};
+
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
@@ -41,6 +55,7 @@ const AppRoutes = () => (
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
     </Route>
+
     <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/projects/:id" element={<ProjectDetails />} />
@@ -54,17 +69,20 @@ const AppRoutes = () => (
       <Route path="/institutions/:id" element={<InstitutionDetails />} />
       <Route path="/chat" element={<Chat />} />
     </Route>
-    <Route path="/admin" element={<AdminLayout />}>
-      <Route index element={<AdminDashboard />} />
-      <Route path="analytics" element={<AdminPlaceholder />} />
-      <Route path="users" element={<AdminPlaceholder />} />
-      <Route path="projects" element={<AdminPlaceholder />} />
-      <Route path="institutions" element={<AdminPlaceholder />} />
-      <Route path="events" element={<AdminPlaceholder />} />
-      <Route path="categories" element={<AdminPlaceholder />} />
-      <Route path="rankings" element={<AdminPlaceholder />} />
-      <Route path="settings" element={<AdminPlaceholder />} />
+
+    <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/analytics" element={<AdminPlaceholder />} />
+      <Route path="/admin/users" element={<AdminUsers />} />
+      <Route path="/admin/projects" element={<AdminPlaceholder />} />
+      <Route path="/admin/institutions" element={<AdminInstitutions />} />
+      <Route path="/admin/courses" element={<AdminCourses />} />
+      <Route path="/admin/events" element={<AdminPlaceholder />} />
+      <Route path="/admin/categories" element={<AdminCategories />} />
+      <Route path="/admin/rankings" element={<AdminPlaceholder />} />
+      <Route path="/admin/settings" element={<AdminPlaceholder />} />
     </Route>
+
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
