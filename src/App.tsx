@@ -23,11 +23,15 @@ import Institutions from "./pages/Institutions";
 import InstitutionDetails from "./pages/InstitutionDetails";
 import Chat from "./pages/Chat";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminInstitutions from "./pages/admin/AdminInstitutions";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminProjects from "./pages/admin/AdminProjects";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminRankings from "./pages/admin/AdminRankings";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,15 +76,15 @@ const AppRoutes = () => (
 
     <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
       <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/analytics" element={<AdminPlaceholder />} />
+      <Route path="/admin/analytics" element={<AdminAnalytics />} />
       <Route path="/admin/users" element={<AdminUsers />} />
-      <Route path="/admin/projects" element={<AdminPlaceholder />} />
+      <Route path="/admin/projects" element={<AdminProjects />} />
       <Route path="/admin/institutions" element={<AdminInstitutions />} />
       <Route path="/admin/courses" element={<AdminCourses />} />
-      <Route path="/admin/events" element={<AdminPlaceholder />} />
+      <Route path="/admin/events" element={<AdminEvents />} />
       <Route path="/admin/categories" element={<AdminCategories />} />
-      <Route path="/admin/rankings" element={<AdminPlaceholder />} />
-      <Route path="/admin/settings" element={<AdminPlaceholder />} />
+      <Route path="/admin/rankings" element={<AdminRankings />} />
+      <Route path="/admin/settings" element={<AdminSettings />} />
     </Route>
 
     <Route path="*" element={<NotFound />} />

@@ -1,6 +1,6 @@
 import api from './api';
 import type { ApiResponse, PageResponse } from './apiResponse';
-import type { Institution, User } from '@/types';
+import type { Institution, Project, UniversityEvent, User } from '@/types';
 
 export type AdminDashboardResponse = {
   overviewStats: {
@@ -59,6 +59,13 @@ export type UpsertCategoryRequest = {
   nome: string;
 };
 
+export type AdminSettingsResponse = {
+  appName: string;
+  authMode: 'session' | 'jwt' | string;
+  corsAllowedOriginPatterns: string[];
+  serverTime: string;
+};
+
 export const adminService = {
   getDashboard: () => api.get('/admin/dashboard'),
 
@@ -105,4 +112,18 @@ export const adminService = {
 
   deleteCategory: (id: number | string) =>
     api.delete<ApiResponse<void>>(`/admin/categories/${id}`),
+
+  listProjects: (params?: { q?: string; page?: number; size?: number; sort?: string }) =>
+    api.get<ApiResponse<PageResponse<Project>>>('/admin/projects', { params }),
+
+  deleteProject: (id: number | string) =>
+    api.delete<ApiResponse<void>>(`/admin/projects/${id}`),
+
+  listEvents: (params?: { q?: string; page?: number; size?: number; sort?: string }) =>
+    api.get<ApiResponse<PageResponse<UniversityEvent>>>('/admin/events', { params }),
+
+  deleteEvent: (id: number | string) =>
+    api.delete<ApiResponse<void>>(`/admin/events/${id}`),
+
+  getSettings: () => api.get<ApiResponse<AdminSettingsResponse>>('/admin/settings'),
 };
