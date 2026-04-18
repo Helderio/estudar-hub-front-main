@@ -89,3 +89,7 @@ Arquivo: `src/pages/Register.tsx`
 - Step "Dados Academicos" carrega as instituicoes do backend via `GET /institutions`.
 - O valor do select e o `institutionId` (string numerica) e e convertido para `number` antes de enviar.
 - `Ano academico` e validado no frontend porque o backend exige `anoAcademico`.
+
+## License
+
+Licensed under the Apache License 2.0.
