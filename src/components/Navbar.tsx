@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Sun, Moon, Menu, X, Bell, LogOut, User, BookOpen } from 'lucide-react';
+import { Sun, Moon, Menu, X, Bell, LogOut, User, BookOpen, Shield } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
@@ -10,6 +10,8 @@ export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+
+  const isAdmin = (user as any)?.role === 'ADMIN';
 
   const navLinks = [
     { to: '/dashboard', label: 'Projectos' },
@@ -69,10 +71,15 @@ export const Navbar = () => {
                   {userMenuOpen && (
                     <>
                       <div className="fixed inset-0" onClick={() => setUserMenuOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-lg py-1 animate-scale-in">
+                      <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-xl shadow-lg py-1 animate-scale-in">
                         <Link to={`/profile/${user?.id}`} onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors">
                           <User size={14} /> Meu Perfil
                         </Link>
+                        {isAdmin && (
+                          <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors">
+                            <Shield size={14} /> Painel Admin
+                          </Link>
+                        )}
                         <button onClick={() => { logout(); setUserMenuOpen(false); }} className="flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-muted/50 transition-colors w-full text-left">
                           <LogOut size={14} /> Sair
                         </button>
@@ -108,6 +115,11 @@ export const Navbar = () => {
                 ))}
                 <Link to="/create-project" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-primary">Criar Projecto</Link>
                 <Link to={`/profile/${user?.id}`} onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground">Meu Perfil</Link>
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground">
+                    Painel Admin
+                  </Link>
+                )}
               </>
             ) : (
               <>
