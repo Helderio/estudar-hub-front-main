@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const TOKEN_STORAGE_KEY = 'token';
+
 function getBaseUrl() {
   // Prefer explicit build-time config.
   const envUrl = import.meta.env.VITE_API_URL;
@@ -25,7 +27,12 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  // JWT removed: auth is handled by HttpSession cookie (JSESSIONID).
+  // Prefer session cookie, but support Bearer JWT (OAuth2 callback provides one).
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as any).Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -35,7 +42,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Session expired / missing cookie: clear local cached user and force re-login.
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      if (window.location.pathname !== '/login') window.location.href = '/login';
     }
     return Promise.reject(error);
   }

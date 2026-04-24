@@ -10,6 +10,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import OAuth2Callback from "./pages/OAuth2Callback";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProjectDetails from "./pages/ProjectDetails";
@@ -57,6 +58,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route element={<AuthLayout />}>
       <Route path="/login" element={<Login />} />
+      <Route path="/oauth2/callback" element={<OAuth2Callback />} />
       <Route path="/register" element={<Register />} />
     </Route>
 

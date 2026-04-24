@@ -5,6 +5,8 @@ import {
 import { authService } from '@/services/authService';
 import type { User } from '@/types';
 
+const TOKEN_STORAGE_KEY = 'token';
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -50,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const saveSession = (profile: User, token: string) => {
     localStorage.setItem('user', JSON.stringify(profile));
+    if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token);
     setUser(profile);
   };
 
@@ -82,15 +85,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    throw new Error('Google login não disponível ainda.');
+    window.location.assign(authService.oauth2AuthorizeUrl('google'));
   }, []);
 
   const loginWithGithub = useCallback(async () => {
-    throw new Error('GitHub login não disponível ainda.');
+    window.location.assign(authService.oauth2AuthorizeUrl('github'));
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('user');
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    void authService.logout().catch(() => {});
     setUser(null);
   }, []);
 

@@ -1,6 +1,7 @@
 import api from './api';
 import type { RegisterData } from '@/context/AuthContext';
 import type { User } from '@/types';
+import type { ApiResponse } from './apiResponse';
 
 export interface LoginPayload {
   email: string;
@@ -24,4 +25,15 @@ export const authService = {
 
   register: (payload: RegisterData) =>
     api.post<AuthApiResponse>('/auth/register', payload),
+
+  me: () =>
+    api.get<ApiResponse<User>>('/profile/me'),
+
+  logout: () =>
+    api.post('/auth/logout'),
+
+  oauth2AuthorizeUrl: (provider: 'google' | 'github') => {
+    const base = (api.defaults.baseURL ?? '/api').replace(/\/$/, '');
+    return `${base}/auth/oauth2/${provider}`;
+  },
 };

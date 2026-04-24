@@ -36,10 +36,9 @@ const Login = () => {
 
   const handleOAuth = async (provider: 'google' | 'github') => {
     try {
-      if (provider === 'google') await loginWithGoogle();
-      else await loginWithGithub();
-      toast({ title: 'Login realizado com sucesso!' });
-      navigate('/dashboard');
+      toast({ title: 'A redirecionar…' });
+      if (provider === 'google') return await loginWithGoogle();
+      return await loginWithGithub();
     } catch {
       toast({ title: 'Erro no login', variant: 'destructive' });
     }
