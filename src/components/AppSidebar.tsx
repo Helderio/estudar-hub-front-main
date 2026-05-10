@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderPlus, CalendarDays, User, ChevronLeft, ChevronRight, Mail, Building2, MessageCircle, CalendarPlus } from 'lucide-react';
+import { LayoutDashboard, FolderPlus, CalendarDays, User, ChevronLeft, ChevronRight, Mail, Building2, MessageCircle, CalendarPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -9,6 +9,7 @@ const menuItems = [
   { to: '/events', icon: CalendarDays, label: 'Eventos' },
   { to: '/create-event', icon: CalendarPlus, label: 'Criar Evento' },
   { to: '/institutions', icon: Building2, label: 'Instituições' },
+  { to: '/people', icon: Users, label: 'Pessoas' },
   { to: '/chat', icon: MessageCircle, label: 'Chat' },
   { to: '/invitations', icon: Mail, label: 'Convites' },
 ];

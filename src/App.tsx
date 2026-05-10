@@ -24,6 +24,7 @@ import Invitations from "./pages/Invitations";
 import Institutions from "./pages/Institutions";
 import InstitutionDetails from "./pages/InstitutionDetails";
 import Chat from "./pages/Chat";
+import People from "./pages/People";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -75,6 +76,7 @@ const AppRoutes = () => (
       <Route path="/invitations" element={<Invitations />} />
       <Route path="/institutions" element={<Institutions />} />
       <Route path="/institutions/:id" element={<InstitutionDetails />} />
+      <Route path="/people" element={<People />} />
       <Route path="/chat" element={<Chat />} />
     </Route>
 

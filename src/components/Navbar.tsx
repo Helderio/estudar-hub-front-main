@@ -18,6 +18,7 @@ export const Navbar = () => {
     { to: '/dashboard', label: 'Projectos' },
     { to: '/events', label: 'Eventos' },
     { to: '/institutions', label: 'Instituições' },
+    { to: '/people', label: 'Pessoas' },
     { to: '/chat', label: 'Chat' },
   ];
 

@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { RankBadge } from '@/components/RankBadge';
 import { ProjectCard } from '@/components/ProjectCard';
-import { FolderOpen, CalendarDays, Award, Building2, GraduationCap, Edit, Github, Linkedin } from 'lucide-react';
+import { FolderOpen, CalendarDays, Award, Building2, GraduationCap, Edit, Github, Linkedin, Loader2, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import type { Project, UniversityEvent, User } from '@/types';
 import { userService } from '@/services/userService';
+import { chatService } from '@/services/chatService';
 import { unwrapApiResponseOrRaw } from '@/services/apiResponse';
+import { useToast } from '@/hooks/use-toast';
+import type { Chat } from '@/types';
 
 const Profile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [userEvents, setUserEvents] = useState<UniversityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startingChat, setStartingChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isOwnProfile = currentUser?.id === user?.id;
 
@@ -50,6 +56,24 @@ const Profile = () => {
       alive = false;
     };
   }, [id]);
+
+  const handleStartChat = async () => {
+    if (!user || isOwnProfile) return;
+
+    try {
+      setStartingChat(true);
+      const res = await chatService.createChat(user.id);
+      const chat = unwrapApiResponseOrRaw<Chat>(res);
+      navigate(`/chat?chatId=${chat.id}`);
+    } catch (e: any) {
+      toast({
+        title: e?.response?.data?.message ?? 'Não foi possível iniciar o chat.',
+        variant: 'destructive',
+      });
+    } finally {
+      setStartingChat(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -113,10 +137,20 @@ const Profile = () => {
               )}
             </div>
           </div>
-          {isOwnProfile && (
+          {isOwnProfile ? (
             <Link to="/edit-profile" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors shrink-0">
               <Edit size={14} /> Editar Perfil
             </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleStartChat}
+              disabled={startingChat}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0"
+            >
+              {startingChat ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />}
+              Mensagem
+            </button>
           )}
         </div>
 

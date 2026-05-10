@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Send, ArrowLeft, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { chatService } from '@/services/chatService';
@@ -9,6 +10,7 @@ import type { Chat as ChatType, ChatMessage } from '@/types';
 
 const Chat = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentUserId = user?.id || '1';
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -33,6 +35,7 @@ const Chat = () => {
   });
 
   useEffect(() => {
+    const requestedChatId = searchParams.get('chatId');
     let alive = true;
     (async () => {
       try {
@@ -41,7 +44,11 @@ const Chat = () => {
         const res = await chatService.getChats();
         const data = unwrapApiResponseOrRaw<any[]>(res);
         if (!alive) return;
-        setChats(Array.isArray(data) ? data.map(normalizeChat) : []);
+        const normalized = Array.isArray(data) ? data.map(normalizeChat) : [];
+        setChats(normalized);
+        if (requestedChatId && normalized.some(chat => chat.id === requestedChatId)) {
+          setSelectedChatId(requestedChatId);
+        }
       } catch (e: any) {
         if (!alive) return;
         setError(e?.response?.data?.message ?? 'Falha ao carregar chats.');
@@ -53,7 +60,13 @@ const Chat = () => {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [searchParams]);
+
+  const selectChat = (chatId: string | null) => {
+    setSelectedChatId(chatId);
+    if (chatId) setSearchParams({ chatId });
+    else setSearchParams({});
+  };
 
   useEffect(() => {
     if (!selectedChatId) return;
@@ -144,6 +157,11 @@ const Chat = () => {
           </div>
         ) : error ? (
           <p className="p-4 text-sm text-muted-foreground">{error}</p>
+        ) : filteredChats.length === 0 ? (
+          <div className="p-6 text-center">
+            <p className="text-sm font-medium text-foreground">Sem conversas</p>
+            <p className="mt-1 text-xs text-muted-foreground">Abra um perfil e toque em Mensagem para começar.</p>
+          </div>
         ) : (
           filteredChats.map(chat => {
             const other = getOtherParticipant(chat);
@@ -154,7 +172,7 @@ const Chat = () => {
             return (
               <button
                 key={chat.id}
-                onClick={() => setSelectedChatId(chat.id)}
+                onClick={() => selectChat(chat.id)}
                 className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors border-b border-border/50 text-left"
               >
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
@@ -199,7 +217,7 @@ const Chat = () => {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
-          <button onClick={() => setSelectedChatId(null)} className="lg:hidden p-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <button onClick={() => selectChat(null)} className="lg:hidden p-1 rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft size={20} />
           </button>
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
@@ -282,7 +300,7 @@ const Chat = () => {
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Send size={24} className="text-primary" />
               </div>
-              <p className="text-muted-foreground">Selecione uma conversa para começar</p>
+              <p className="text-muted-foreground">Selecione uma conversa ou abra um perfil e toque em Mensagem</p>
             </div>
           )}
         </div>

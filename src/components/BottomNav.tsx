@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderKanban, CalendarDays, MessageCircle, User } from 'lucide-react';
+import { Home, FolderKanban, CalendarDays, MessageCircle, User, Users } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/dashboard', icon: FolderKanban, label: 'Projectos', match: '/dashboard' },
   { to: '/events', icon: CalendarDays, label: 'Eventos' },
+  { to: '/people', icon: Users, label: 'Pessoas' },
   { to: '/chat', icon: MessageCircle, label: 'Chat' },
 ];
 
