@@ -21,7 +21,6 @@ function getBaseUrl() {
 
 const api = axios.create({
   baseURL: getBaseUrl(),
-  headers: { 'Content-Type': 'application/json' },
   // Session-based auth uses cookies.
   withCredentials: true,
 });
