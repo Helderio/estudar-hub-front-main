@@ -136,6 +136,28 @@ export interface Invitation {
   createdAt: string;
 }
 
+export type NotificationType =
+  | 'project_invitation'
+  | 'project_invitation_accepted'
+  | 'project_invitation_rejected';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  actionUrl?: string;
+  read: boolean;
+  readAt?: string | null;
+  createdAt: string;
+  actor?: User | null;
+}
+
+export interface NotificationCount {
+  unread: number;
+  total: number;
+}
+
 export const PROJECT_CATEGORIES = [
   'Desenvolvimento Web',
   'Mobile',

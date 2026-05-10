@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Sun, Moon, Menu, X, Bell, LogOut, User, BookOpen, Shield } from 'lucide-react';
+import { Sun, Moon, Menu, X, LogOut, User, BookOpen, Shield } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
+import { NotificationButton } from '@/components/NotificationButton';
 
 export const Navbar = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -57,10 +58,7 @@ export const Navbar = () => {
 
             {isAuthenticated ? (
               <>
-                <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors relative">
-                  <Bell size={18} />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-                </button>
+                <NotificationButton />
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
