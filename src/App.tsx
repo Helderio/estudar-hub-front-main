@@ -18,6 +18,7 @@ import CreateProject from "./pages/CreateProject";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Events from "./pages/Events";
+import EventDetails from "./pages/EventDetails";
 import CreateEvent from "./pages/CreateEvent";
 import Invitations from "./pages/Invitations";
 import Institutions from "./pages/Institutions";
@@ -69,6 +70,7 @@ const AppRoutes = () => (
       <Route path="/profile/:id" element={<Profile />} />
       <Route path="/edit-profile" element={<EditProfile />} />
       <Route path="/events" element={<Events />} />
+      <Route path="/events/:id" element={<EventDetails />} />
       <Route path="/create-event" element={<CreateEvent />} />
       <Route path="/invitations" element={<Invitations />} />
       <Route path="/institutions" element={<Institutions />} />

@@ -153,13 +153,13 @@ const Profile = () => {
         {userEvents.length > 0 ? (
           <div className="space-y-3">
             {userEvents.map(e => (
-              <div key={e.id} className="flex items-center gap-4 p-3 bg-card border border-border rounded-xl">
+              <Link key={e.id} to={`/events/${e.id}`} className="flex items-center gap-4 p-3 bg-card border border-border rounded-xl hover:border-primary/30 hover:bg-muted/30 transition-colors">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><CalendarDays size={18} className="text-primary" /></div>
                 <div>
                   <p className="text-sm font-medium text-foreground">{e.title}</p>
                   <p className="text-xs text-muted-foreground">{new Date(e.date).toLocaleDateString('pt-BR')} · {e.location}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

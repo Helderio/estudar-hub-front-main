@@ -16,10 +16,14 @@ const typeColors: Record<string, string> = {
 
 export const EventCard = ({ event }: EventCardProps) => {
   return (
-    <Link to={`/events`} className="group block">
+    <Link to={`/events/${event.id}`} className="group block">
       <div className="rounded-xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30">
         <div className="aspect-[2/1] bg-gradient-to-br from-primary/10 to-accent/20 relative flex items-center justify-center">
-          <span className="text-5xl font-display font-bold text-primary/20">{event.title.charAt(0)}</span>
+          {event.banner ? (
+            <img src={event.banner} alt={event.title} className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-5xl font-display font-bold text-primary/20">{event.title.charAt(0)}</span>
+          )}
           <div className="absolute top-3 left-3">
             <span className={`text-xs font-medium px-2 py-1 rounded-lg ${typeColors[event.type]}`}>{EVENT_TYPES[event.type]}</span>
           </div>
