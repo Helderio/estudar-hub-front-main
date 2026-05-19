@@ -41,28 +41,28 @@ const Invitations = () => {
   const handleAccept = async (invitationId: string) => {
     try {
       const res = await participationService.acceptInvite(invitationId);
-      toast({ title: res?.data?.message ?? 'Convite aceito!' });
+      toast({ title: res?.data?.message ?? 'Pedido aceite!' });
       await load();
     } catch (e: any) {
-      toast({ title: e?.response?.data?.message ?? 'Falha ao aceitar convite.' });
+      toast({ title: e?.response?.data?.message ?? 'Falha ao aceitar pedido.', variant: 'destructive' });
     }
   };
 
   const handleReject = async (invitationId: string) => {
     try {
       const res = await participationService.rejectInvite(invitationId);
-      toast({ title: res?.data?.message ?? 'Convite recusado.' });
+      toast({ title: res?.data?.message ?? 'Pedido recusado.' });
       await load();
     } catch (e: any) {
-      toast({ title: e?.response?.data?.message ?? 'Falha ao recusar convite.' });
+      toast({ title: e?.response?.data?.message ?? 'Falha ao recusar pedido.', variant: 'destructive' });
     }
   };
 
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Convites</h1>
-        <p className="text-sm text-muted-foreground">Gerencie seus convites para projetos.</p>
+        <h1 className="font-display text-2xl font-bold text-foreground">Convites e pedidos</h1>
+        <p className="text-sm text-muted-foreground">Gerencie convites recebidos e pedidos de participação nos teus projetos.</p>
       </div>
 
       <div className="space-y-3">

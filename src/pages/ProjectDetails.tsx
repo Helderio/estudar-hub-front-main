@@ -104,15 +104,23 @@ const ProjectDetails = () => {
     [sentInvitations]
   );
   const isParticipating = !!currentUser && participantIds.has(String(currentUser.id));
-  const canLeave = isParticipating && participants.length > 1;
+  const isAuthor = !!currentUser && !!project?.author && String(project.author.id) === String(currentUser.id);
+  const hasPendingParticipationRequest = !!currentUser && !!project && !isParticipating && sentInvitations.some(inv => {
+    return inv.status === 'pending'
+      && String(inv.projectId) === String(project.id)
+      && String(inv.from.id) === String(currentUser.id)
+      && String(inv.to.id) === String(project.author.id);
+  });
+  const canLeave = isParticipating && !isAuthor && participants.length > 1;
+  const canInvite = isAuthor;
 
   const inviteCandidates = useMemo(() => {
-    if (!currentUser) return [];
+    if (!currentUser || !canInvite) return [];
     return users.filter(user => {
       const userId = String(user.id);
       return userId !== String(currentUser.id) && !participantIds.has(userId) && !pendingInviteUserIds.has(userId);
     });
-  }, [currentUser, participantIds, pendingInviteUserIds, users]);
+  }, [canInvite, currentUser, participantIds, pendingInviteUserIds, users]);
 
   const handleParticipate = async () => {
     if (!project) return;
@@ -121,8 +129,9 @@ const ProjectDetails = () => {
       const res = isParticipating
         ? await participationService.leaveProject(String(project.id))
         : await participationService.requestParticipation(String(project.id));
-      toast({ title: res?.data?.message ?? (isParticipating ? 'Saíste do projeto.' : 'Participação registrada!') });
+      toast({ title: res?.data?.message ?? (isParticipating ? 'Saíste do projeto.' : 'Pedido de participação enviado.') });
       setProject(unwrapApiResponseOrRaw<Project>(res) ?? await loadProject(String(project.id)));
+      setSentInvitations(await loadSentInvitations(String(project.id)));
     } catch (e: any) {
       toast({ title: e?.response?.data?.message ?? 'Falha ao atualizar participação.', variant: 'destructive' });
     } finally {
@@ -210,6 +219,7 @@ const ProjectDetails = () => {
           <span className="flex items-center gap-1"><Calendar size={14} />{new Date(project.createdAt).toLocaleDateString('pt-BR')}</span>
           <span className="flex items-center gap-1"><Users size={14} />{participants.length} participantes</span>
           {isParticipating && <span className="flex items-center gap-1 text-rank-e"><Check size={14} />Tu participas</span>}
+          {hasPendingParticipationRequest && <span className="flex items-center gap-1 text-warning"><Mail size={14} />Pedido pendente</span>}
         </div>
       </div>
 
@@ -217,11 +227,11 @@ const ProjectDetails = () => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={handleParticipate}
-          disabled={actionLoading || (isParticipating && !canLeave)}
+          disabled={actionLoading || isAuthor || hasPendingParticipationRequest || (isParticipating && !canLeave)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {isParticipating ? <UserMinus size={16} /> : <UserPlus size={16} />}
-          {isParticipating ? 'Sair do Projeto' : 'Participar do Projeto'}
+          {isAuthor ? <Check size={16} /> : isParticipating ? <UserMinus size={16} /> : hasPendingParticipationRequest ? <Check size={16} /> : <UserPlus size={16} />}
+          {isAuthor ? 'Autor do projeto' : isParticipating ? 'Sair do Projeto' : hasPendingParticipationRequest ? 'Pedido enviado' : 'Pedir participação'}
         </button>
         {project.pdfUrl && (
           <a href={project.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
@@ -260,8 +270,8 @@ const ProjectDetails = () => {
             <h3 className="font-display font-semibold text-foreground flex items-center gap-2"><Mail size={18} /> Convidar participante</h3>
             <p className="text-xs text-muted-foreground mt-1">Procura um utilizador e envia um convite para colaborar neste projecto.</p>
           </div>
-          {!isParticipating ? (
-            <p className="text-sm text-muted-foreground">Só participantes do projecto podem enviar convites.</p>
+          {!canInvite ? (
+            <p className="text-sm text-muted-foreground">Só o autor do projecto pode enviar convites.</p>
           ) : (
             <>
               <div className="relative">
@@ -305,8 +315,10 @@ const ProjectDetails = () => {
 
         <div className="bg-card border border-border rounded-xl p-4 space-y-4">
           <div>
-            <h3 className="font-display font-semibold text-foreground">Convites enviados</h3>
-            <p className="text-xs text-muted-foreground mt-1">Acompanha o estado dos convites que enviaste para este projecto.</p>
+            <h3 className="font-display font-semibold text-foreground">{canInvite ? 'Convites enviados' : 'Pedidos enviados'}</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {canInvite ? 'Acompanha o estado dos convites que enviaste para este projecto.' : 'Acompanha o estado dos teus pedidos para este projecto.'}
+            </p>
           </div>
           {sentInvitations.length > 0 ? (
             <div className="space-y-2">
@@ -315,7 +327,7 @@ const ProjectDetails = () => {
                 return (
                   <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{inv.to.name}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{canInvite ? inv.to.name : inv.projectTitle}</p>
                       <p className="text-xs text-muted-foreground truncate">{inv.to.email}</p>
                     </div>
                     <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
@@ -324,7 +336,7 @@ const ProjectDetails = () => {
               })}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Ainda não enviaste convites para este projecto.</p>
+            <p className="text-sm text-muted-foreground">{canInvite ? 'Ainda não enviaste convites para este projecto.' : 'Ainda não enviaste pedidos para este projecto.'}</p>
           )}
         </div>
       </div>
