@@ -113,7 +113,7 @@ const AdminProjects = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Projetos</h1>
+          <h1 className="page-title">Projectos</h1>
           <p className="text-muted-foreground mt-1">Gestão global de projetos (admin).</p>
         </div>
 
@@ -136,7 +136,7 @@ const AdminProjects = () => {
             disabled={loading}
             className="gap-2"
           >
-            <RefreshCcw size={16} /> Atualizar
+            <RefreshCcw size={16} /> Actualizar
           </Button>
         </div>
       </div>
@@ -163,7 +163,7 @@ const AdminProjects = () => {
                 {data.content.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
-                      Nenhum projeto.
+                      Nenhum projecto encontrado.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -192,7 +192,7 @@ const AdminProjects = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Remover projeto?</AlertDialogTitle>
+                                <AlertDialogTitle>Remover projecto?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>

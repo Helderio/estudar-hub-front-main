@@ -1,143 +1,172 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, Award, Users, CalendarDays, Sparkles, BookOpen, Code, GraduationCap, MapPin } from 'lucide-react';
-import { RankBadge } from '@/components/RankBadge';
+import { CalendarDays, Building2, Users, MessageCircle } from 'lucide-react';
+import { RankDiamond } from '@/components/RankBadge';
 import type { Rank } from '@/types';
 import { RANK_INFO } from '@/types';
 import { Navbar } from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
+import { Logo, Lusona, WASignature } from '@/shared/ui/brand';
+import { cn } from '@/lib/utils';
 
 const ranks: Rank[] = ['E', 'D', 'C', 'B', 'A', 'S'];
 
-const features = [
-  { icon: Code, title: 'Publique Projectos', description: 'Partilhe os seus projectos académicos com a comunidade universitária de Benguela.' },
-  { icon: Users, title: 'Colabore', description: 'Convide colegas para participar, forme equipas e construa projectos incríveis juntos.' },
-  { icon: Award, title: 'Sistema de Ranking', description: 'Projectos classificados de E a S por complexidade. Construa a sua reputação académica.' },
-  { icon: CalendarDays, title: 'Eventos', description: 'Participe de hackathons, conferências e workshops nas universidades de Benguela.' },
+const steps = [
+  {
+    title: 'Publique o projecto',
+    text: 'Título, descrição, categoria, ligação ao repositório e o PDF do relatório, tudo numa página.',
+  },
+  {
+    title: 'Junte a equipa',
+    text: 'Convide colegas ou aceite pedidos de quem quer participar. Cada membro aparece no projecto.',
+  },
+  {
+    title: 'Ganhe um rank',
+    text: 'O projecto é classificado de E a S pela complexidade, e o seu perfil reflecte o que já construiu.',
+  },
 ];
 
+const more = [
+  { icon: CalendarDays, title: 'Eventos', text: 'Hackathons, conferências e concursos nas instituições da província, com inscrição na própria plataforma.' },
+  { icon: Building2, title: 'Instituições', text: 'Cada universidade e instituto tem a sua página, com os projectos dos seus estudantes.' },
+  { icon: Users, title: 'Pessoas', text: 'Encontre colegas por curso, instituição ou área de interesse.' },
+  { icon: MessageCircle, title: 'Chat', text: 'Combine o trabalho com a equipa sem sair do EstudarHub.' },
+];
+
+// Degraus da escada de ranks: cada nível sobe um pouco e cresce
+const stepOffset = ['lg:mt-40', 'lg:mt-32', 'lg:mt-24', 'lg:mt-16', 'lg:mt-8', 'lg:mt-0'];
+const diamondSize = ['h-9 w-9', 'h-10 w-10', 'h-11 w-11', 'h-12 w-12', 'h-14 w-14', 'h-16 w-16'];
+
 const Index = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen bg-background transition-theme">
-      <Navbar />
+      <Navbar contained />
 
-      {/* Hero */}
-      <section className="pt-24 pb-16 md:pt-32 md:pb-24 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-6">
-              <Sparkles size={14} /> Plataforma Académica de Benguela
+      <main>
+        {/* Hero */}
+        <section className="relative overflow-hidden border-b border-border pt-16">
+          <div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 md:px-8 md:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16">
+            <div>
+              <h1 className="max-w-[16ch] font-display text-[40px] font-medium leading-[1.08] text-foreground md:text-[56px]">
+                Os projectos académicos de Benguela, num só lugar.
+              </h1>
+              <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
+                Publique o seu trabalho, encontre colegas para colaborar e veja cada projecto classificado, do primeiro exercício à investigação científica.
+              </p>
+              <div className="mt-9 flex flex-wrap items-center gap-3">
+                {isAuthenticated ? (
+                  <Link to="/dashboard" className="inline-flex h-12 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent">
+                    Ver projectos
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/register" className="inline-flex h-12 items-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent">
+                      Criar conta
+                    </Link>
+                    <Link to="/login" className="inline-flex h-12 items-center rounded-md border border-input px-6 text-sm font-semibold text-foreground transition-colors hover:bg-secondary">
+                      Entrar
+                    </Link>
+                  </>
+                )}
+              </div>
+              <p className="mt-6 text-sm text-muted-foreground">Para estudantes e docentes do ensino superior em Benguela, Lobito e Catumbela.</p>
             </div>
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-tight max-w-4xl mx-auto">
-              O futuro da educação <br />
-              <span className="gradient-text">começa aqui</span>
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Publique projectos, colabore com estudantes das universidades de Benguela, Lobito e Catumbela. Construa a sua reputação académica no EstudarHub.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl gradient-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-primary/25">
-                Começar agora <ArrowRight size={18} />
-              </Link>
-              <Link to="/login" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-border text-foreground font-semibold hover:bg-muted/50 transition-colors">
-                Já tenho conta
-              </Link>
-            </div>
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5"><GraduationCap size={16} className="text-primary" /> 1.000+ projectos</span>
-              <span className="flex items-center gap-1.5"><Users size={16} className="text-primary" /> 4.000+ estudantes</span>
-              <span className="flex items-center gap-1.5"><MapPin size={16} className="text-primary" /> Benguela, Angola</span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Features */}
-      <section className="py-16 md:py-24 px-4 bg-card/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Tudo que precisa</h2>
-            <p className="mt-3 text-muted-foreground">Uma plataforma completa para a sua vida académica.</p>
+            <figure className="relative">
+              <div className="sona-dots absolute -inset-6 rounded-xl opacity-80" aria-hidden />
+              <div className="relative rounded-xl border border-border bg-card/80 p-6 md:p-10">
+                <Lusona cols={5} rows={3} className="w-full" strokeWidth={2.25} dotClassName="text-foreground/60" draw />
+              </div>
+              <figcaption className="relative mt-4 max-w-[46ch] text-xs leading-relaxed text-muted-foreground">
+                Um lusona da tradição Tchokwe: uma só linha que contorna todos os pontos sem se interromper.
+              </figcaption>
+            </figure>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-6 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300"
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <f.icon size={22} className="text-primary" />
+        </section>
+
+        {/* Como funciona — sequência real, por isso numerada */}
+        <section className="border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
+            <h2 className="font-display font-medium max-w-[22ch] text-[28px] leading-tight text-foreground md:text-4xl">Do repositório ao currículo em três passos.</h2>
+            <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
+              {steps.map((s, i) => (
+                <li key={s.title} className="border-t border-foreground/80 pt-5">
+                  <span className="font-mono text-sm text-primary">{i + 1}</span>
+                  <h3 className="mt-3 text-lg text-foreground">{s.title}</h3>
+                  <p className="mt-2 max-w-[38ch] text-[15px] leading-relaxed text-muted-foreground">{s.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Escada de ranks */}
+        <section className="border-b border-border bg-secondary/60">
+          <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
+            <div className="max-w-[56ch]">
+              <h2 className="font-display font-medium text-[28px] leading-tight text-foreground md:text-4xl">Seis níveis, de E a S.</h2>
+              <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+                O rank diz a quem visita o projecto o que esperar dele. Um exercício de programação e uma investigação original não se medem da mesma forma.
+              </p>
+            </div>
+
+            <ol className="mt-14 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-6 lg:items-start">
+              {ranks.map((rank, i) => (
+                <li key={rank} className={cn('flex gap-4 lg:block', stepOffset[i])}>
+                  <RankDiamond rank={rank} className={cn(diamondSize[i], 'lg:mb-4')} size="lg" />
+                  <div className="lg:border-l lg:border-border lg:pl-3">
+                    <p className="text-sm font-semibold text-foreground">Rank {rank}</p>
+                    <p className="text-sm text-foreground/80">{RANK_INFO[rank].label}</p>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{RANK_INFO[rank].description}.</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Restante plataforma */}
+        <section className="border-b border-border">
+          <div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 md:px-8 md:py-24 lg:grid-cols-[0.8fr_1.2fr]">
+            <h2 className="font-display font-medium max-w-[16ch] text-[28px] leading-tight text-foreground md:text-4xl">E o que acontece à volta dos projectos.</h2>
+            <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+              {more.map((m) => (
+                <div key={m.title}>
+                  <dt className="flex items-center gap-2.5 font-semibold text-foreground">
+                    <m.icon size={18} className="text-primary" aria-hidden />
+                    {m.title}
+                  </dt>
+                  <dd className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{m.text}</dd>
                 </div>
-                <h3 className="font-display font-bold text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.description}</p>
-              </motion.div>
-            ))}
+              ))}
+            </dl>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Ranking */}
-      <section className="py-16 md:py-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Sistema de Ranking</h2>
-            <p className="mt-3 text-muted-foreground">Projectos classificados por nível de complexidade.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {ranks.map((rank, i) => (
-              <motion.div
-                key={rank}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border"
-              >
-                <RankBadge rank={rank} size="lg" showTooltip={false} />
-                <div>
-                  <p className="font-semibold text-foreground text-sm">{RANK_INFO[rank].label}</p>
-                  <p className="text-xs text-muted-foreground">{RANK_INFO[rank].description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16 md:py-24 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="p-8 md:p-12 rounded-2xl gradient-primary relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent)]" />
-            <div className="relative z-10">
-              <BookOpen size={36} className="text-primary-foreground mx-auto mb-4" />
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-primary-foreground mb-3">Pronto para começar?</h2>
-              <p className="text-primary-foreground/80 mb-6">Junte-se a milhares de estudantes em Benguela e comece a construir a sua reputação académica.</p>
-              <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-card text-foreground font-semibold hover:bg-card/90 transition-colors">
-                Criar conta gratuita <ArrowRight size={18} />
+        {/* Chamada final */}
+        {!isAuthenticated && (
+          <section>
+            <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-16 md:flex-row md:items-center md:justify-between md:px-8 md:py-20">
+              <h2 className="font-display font-medium max-w-[20ch] text-[28px] leading-tight text-foreground md:text-4xl">Publique o seu próximo projecto aqui.</h2>
+              <Link to="/register" className="inline-flex h-12 shrink-0 items-center self-start rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent md:self-auto">
+                Criar conta gratuita
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        )}
+      </main>
 
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
-              <BookOpen size={12} className="text-primary-foreground" />
-            </div>
-            <span className="font-display font-semibold text-foreground">EstudarHub</span>
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-5 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="flex items-center gap-4">
+            <Logo />
+            <span>Benguela, Angola</span>
           </div>
-          <p>© 2026 EstudarHub · Benguela, Angola. Todos os direitos reservados.</p>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
+            <WASignature />
+            <span>© {new Date().getFullYear()} EstudarHub</span>
+          </div>
         </div>
       </footer>
     </div>

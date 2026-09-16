@@ -113,7 +113,7 @@ const AdminEvents = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Eventos</h1>
+          <h1 className="page-title">Eventos</h1>
           <p className="text-muted-foreground mt-1">Gestão global de eventos (admin).</p>
         </div>
 
@@ -136,7 +136,7 @@ const AdminEvents = () => {
             disabled={loading}
             className="gap-2"
           >
-            <RefreshCcw size={16} /> Atualizar
+            <RefreshCcw size={16} /> Actualizar
           </Button>
         </div>
       </div>

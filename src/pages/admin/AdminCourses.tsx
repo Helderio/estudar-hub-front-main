@@ -146,12 +146,12 @@ const AdminCourses = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Cursos</h1>
+          <h1 className="page-title">Cursos</h1>
           <p className="text-sm text-muted-foreground">CRUD via API Admin.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={load} disabled={loading} className="gap-2">
-            <RefreshCcw size={16} /> Atualizar
+            <RefreshCcw size={16} /> Actualizar
           </Button>
           <Button onClick={openCreate} className="gap-2">
             <Plus size={16} /> Novo
@@ -182,7 +182,7 @@ const AdminCourses = () => {
                 Cancelar
               </Button>
               <Button type="submit" disabled={loading}>
-                Salvar
+                Guardar
               </Button>
             </DialogFooter>
           </form>

@@ -55,7 +55,7 @@ const OAuth2Callback = () => {
         navigate(role === 'ADMIN' ? '/admin' : '/dashboard', { replace: true });
       } catch {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
-        setError('Não foi possível concluir o login. Tente novamente.');
+        setError('Não foi possível concluir a entrada.');
         setTimeout(() => navigate('/login', { replace: true }), 1200);
       }
     };
@@ -65,17 +65,18 @@ const OAuth2Callback = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-md animate-fade-in">
-      <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-4 text-center">
+    <div className="w-full max-w-[380px] animate-fade-in" role="status">
+      <div className="space-y-3">
         {!error ? (
           <>
-            <Loader2 size={20} className="animate-spin mx-auto" />
-            <p className="text-sm text-muted-foreground">A concluir o login…</p>
+            <Loader2 size={20} className="animate-spin text-primary" />
+            <p className="font-display text-[22px] font-medium text-foreground">A entrar</p>
+            <p className="text-sm text-muted-foreground">A confirmar a sua conta. Não feche esta página.</p>
           </>
         ) : (
           <>
-            <p className="text-sm text-destructive">{error}</p>
-            <p className="text-xs text-muted-foreground">Você será redirecionado para o login.</p>
+            <p className="font-display text-[22px] font-medium text-foreground">{error}</p>
+            <p className="text-sm text-muted-foreground">Vai voltar à página de entrada para tentar de novo.</p>
           </>
         )}
       </div>

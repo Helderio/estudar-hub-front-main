@@ -5,7 +5,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { institutionService } from '@/services/institutionService';
 import { unwrapApiResponseOrRaw, type PageResponse } from '@/services/apiResponse';
-import { Building2, Globe, ArrowRight } from 'lucide-react';
+import { Globe, ChevronRight } from 'lucide-react';
+import { PageHeader, InstitutionMark } from '@/shared/ui';
 import type { Institution } from '@/types';
 
 function getApiErrorMessage(err: unknown): string | undefined {
@@ -49,7 +50,7 @@ const Institutions = () => {
         setInstitutions(isPageResponse(data) ? data.content : []);
       } catch (e: unknown) {
         if (!alive) return;
-        setError(getApiErrorMessage(e) ?? 'Falha ao carregar instituições.');
+        setError(getApiErrorMessage(e) ?? 'O servidor não respondeu.');
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -68,50 +69,39 @@ const Institutions = () => {
   }, [institutions, search]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Instituições</h1>
-        <p className="text-sm text-muted-foreground">Universidades e institutos parceiros em Benguela.</p>
-      </div>
+    <div className="space-y-8 animate-fade-in">
+      <PageHeader title="Instituições" description="Universidades e institutos da província com estudantes no EstudarHub." />
 
-      <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar instituições..." />
+      <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome ou sigla" />
 
       {loading ? (
-        <SkeletonLoader count={6} type="card" />
+        <SkeletonLoader count={5} type="line" />
       ) : error ? (
-        <EmptyState title="Não foi possível carregar" description={error} />
+        <EmptyState title="Não foi possível carregar as instituições" description={`${error} Verifique a ligação e recarregue a página.`} />
       ) : filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ul className="grid gap-3 md:grid-cols-2">
           {filtered.map((inst) => (
-            <Link
-              key={inst.id}
-              to={`/institutions/${inst.id}`}
-              className="group rounded-xl border border-border bg-card p-6 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 transition-all duration-300"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Building2 size={22} className="text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                    {inst.sigla}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{inst.nome}</p>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                {inst.website && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Globe size={12} /> {inst.website.replace('https://', '')}
+            <li key={inst.id}>
+              <Link to={`/institutions/${inst.id}`} className="panel group flex h-full items-center gap-4 p-4 transition-colors hover:border-primary/50">
+                <InstitutionMark sigla={inst.sigla} logo={inst.logo} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug text-foreground group-hover:text-primary">{inst.nome}</span>
+                  <span className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
+                    <span>{inst.sigla}</span>
+                    {inst.website && (
+                      <span className="inline-flex items-center gap-1">
+                        <Globe size={12} aria-hidden /> {inst.website.replace(/^https?:\/\//, '')}
+                      </span>
+                    )}
                   </span>
-                )}
-                <ArrowRight size={14} className="text-muted-foreground group-hover:text-primary transition-colors ml-auto" />
-              </div>
-            </Link>
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden />
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        <EmptyState title="Nenhuma instituição encontrada" description="Tente ajustar a sua pesquisa." />
+        <EmptyState title="Nenhuma instituição encontrada" description={`Nenhum resultado para "${search}". Tente a sigla, por exemplo ISPB.`} />
       )}
     </div>
   );

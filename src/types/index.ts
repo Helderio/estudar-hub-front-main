@@ -1,12 +1,12 @@
 export type Rank = 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
 
 export const RANK_INFO: Record<Rank, { label: string; description: string }> = {
-  E: { label: 'Muito Simples', description: 'Projectos introdutórios e exercícios básicos' },
-  D: { label: 'Simples', description: 'Projectos com escopo pequeno e baixa complexidade' },
+  E: { label: 'Muito simples', description: 'Projectos introdutórios e exercícios básicos' },
+  D: { label: 'Simples', description: 'Projectos de âmbito pequeno e baixa complexidade' },
   C: { label: 'Médio', description: 'Projectos com complexidade moderada e múltiplas funcionalidades' },
   B: { label: 'Avançado', description: 'Projectos robustos com arquitectura complexa' },
   A: { label: 'TCC', description: 'Trabalhos de conclusão de curso com fundamentação teórica' },
-  S: { label: 'Pesquisa Científica', description: 'Pesquisa académica com contribuição original ao conhecimento' },
+  S: { label: 'Investigação científica', description: 'Investigação académica com contribuição original ao conhecimento' },
 };
 
 export interface Institution {

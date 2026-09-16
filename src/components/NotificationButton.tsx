@@ -101,12 +101,12 @@ export const NotificationButton = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-          aria-label="Notificacoes"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          aria-label={count.unread > 0 ? `Notificações, ${count.unread} por ler` : 'Notificações'}
         >
           <Bell size={18} />
           {count.unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-medium text-primary-foreground ring-2 ring-background">
               {unreadLabel}
             </span>
           )}
@@ -115,10 +115,10 @@ export const NotificationButton = () => {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(92vw,380px)] p-0 overflow-hidden rounded-xl">
+      <PopoverContent align="end" className="w-[min(92vw,380px)] overflow-hidden rounded-lg p-0">
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Notificacoes</h2>
+            <h2 className="text-sm font-semibold text-foreground">Notificações</h2>
             <p className="text-xs text-muted-foreground">{count.unread} por ler</p>
           </div>
           <Button
@@ -130,7 +130,7 @@ export const NotificationButton = () => {
             className="h-8 px-2 text-xs"
           >
             {markingAll ? <Loader2 className="animate-spin" /> : <CheckCheck />}
-            Marcar lidas
+            Marcar como lidas
           </Button>
         </div>
 
@@ -142,8 +142,8 @@ export const NotificationButton = () => {
             </div>
           ) : notifications.length === 0 ? (
             <div className="px-4 py-10 text-center">
-              <p className="text-sm font-medium text-foreground">Sem notificacoes</p>
-              <p className="mt-1 text-xs text-muted-foreground">Quando houver novidades, elas aparecem aqui.</p>
+              <p className="text-sm font-medium text-foreground">Sem notificações</p>
+              <p className="mt-1 text-xs text-muted-foreground">Convites, pedidos e respostas aparecem aqui.</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -151,7 +151,7 @@ export const NotificationButton = () => {
                 const content = (
                   <div
                     className={cn(
-                      'flex gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50',
+                      'flex gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary',
                       !notification.read && 'bg-primary/5',
                     )}
                     onClick={() => handleMarkAsRead(notification)}

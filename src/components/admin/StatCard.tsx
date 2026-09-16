@@ -10,32 +10,23 @@ interface StatCardProps {
 }
 
 export const StatCard = ({ title, value, change, icon: Icon, description }: StatCardProps) => {
-  const isPositive = change >= 0;
+  const safeChange = Number.isFinite(change) ? change : 0;
+  const isPositive = safeChange >= 0;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold tracking-tight text-foreground">{value}</p>
-        </div>
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon size={20} className="text-primary" />
-        </div>
-      </div>
-      <div className="mt-4 flex items-center gap-1.5 text-sm">
-        <span
-          className={cn(
-            'inline-flex items-center gap-0.5 font-medium',
-            isPositive ? 'text-success' : 'text-destructive'
-          )}
-        >
-          {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+    <div className="panel p-4 md:p-5">
+      <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <Icon size={15} aria-hidden /> {title}
+      </p>
+      <p className="mt-3 font-display text-[26px] font-medium leading-none md:text-[32px] text-foreground">{value}</p>
+      <p className="mt-3 flex items-center gap-1.5 text-xs">
+        <span className={cn('inline-flex items-center gap-0.5 font-mono font-medium', isPositive ? 'text-success' : 'text-destructive')}>
+          {isPositive ? <TrendingUp size={13} aria-hidden /> : <TrendingDown size={13} aria-hidden />}
           {isPositive ? '+' : ''}
-          {change}%
+          {safeChange}%
         </span>
-        <span className="text-muted-foreground">{description ?? 'vs período anterior'}</span>
-      </div>
+        <span className="hidden text-muted-foreground sm:inline">{description ?? 'face ao período anterior'}</span>
+      </p>
     </div>
   );
 };

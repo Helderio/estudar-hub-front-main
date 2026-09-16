@@ -11,8 +11,10 @@ export const AdminLayout = () => {
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminTopbar period={period} onPeriodChange={setPeriod} />
-        <main className="flex-1 p-6 lg:p-8">
-          <Outlet context={{ period }} />
+        <main className="flex-1 px-4 py-6 md:px-8 lg:py-10">
+          <div className="mx-auto w-full max-w-7xl">
+            <Outlet context={{ period }} />
+          </div>
         </main>
       </div>
     </div>

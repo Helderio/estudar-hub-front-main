@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Check, Download, ExternalLink, Mail, MessageSquare, Search, UserMinus, Users, UserPlus, Calendar } from 'lucide-react';
+import { Check, Download, ExternalLink, Mail, MessageSquare, Search, UserMinus, Users, UserPlus, Calendar } from 'lucide-react';
 import { RankBadge } from '@/components/RankBadge';
 import { UserCard } from '@/components/UserCard';
+import { SonaCover, Avatar, BackLink } from '@/shared/ui';
+import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
@@ -14,9 +16,9 @@ import type { PageResponse } from '@/services/apiResponse';
 import { unwrapApiResponseOrRaw } from '@/services/apiResponse';
 
 const invitationStatus = {
-  pending: { label: 'Pendente', className: 'bg-warning/15 text-warning' },
-  accepted: { label: 'Aceito', className: 'bg-rank-e/15 text-rank-e' },
-  rejected: { label: 'Recusado', className: 'bg-destructive/15 text-destructive' },
+  pending: { label: 'Pendente', dot: 'bg-warning' },
+  accepted: { label: 'Aceite', dot: 'bg-rank-e' },
+  rejected: { label: 'Recusado', dot: 'bg-destructive' },
 };
 
 const ProjectDetails = () => {
@@ -61,7 +63,7 @@ const ProjectDetails = () => {
         setSentInvitations(sent);
       } catch (e: any) {
         if (!alive) return;
-        setError(e?.response?.data?.message ?? 'Falha ao carregar o projeto.');
+        setError(e?.response?.data?.message ?? 'O servidor não respondeu.');
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -129,11 +131,11 @@ const ProjectDetails = () => {
       const res = isParticipating
         ? await participationService.leaveProject(String(project.id))
         : await participationService.requestParticipation(String(project.id));
-      toast({ title: res?.data?.message ?? (isParticipating ? 'Saíste do projeto.' : 'Pedido de participação enviado.') });
+      toast({ title: res?.data?.message ?? (isParticipating ? 'Saiu do projecto.' : 'Pedido enviado ao autor.') });
       setProject(unwrapApiResponseOrRaw<Project>(res) ?? await loadProject(String(project.id)));
       setSentInvitations(await loadSentInvitations(String(project.id)));
     } catch (e: any) {
-      toast({ title: e?.response?.data?.message ?? 'Falha ao atualizar participação.', variant: 'destructive' });
+      toast({ title: e?.response?.data?.message ?? 'Não foi possível actualizar a participação. Tente novamente.', variant: 'destructive' });
     } finally {
       setActionLoading(false);
     }
@@ -144,12 +146,12 @@ const ProjectDetails = () => {
     try {
       setInviteLoading(true);
       const res = await participationService.invite(String(project.id), selectedUserId);
-      toast({ title: res?.data?.message ?? 'Convite enviado!' });
+      toast({ title: res?.data?.message ?? 'Convite enviado' });
       setSelectedUserId('');
       setInviteSearch('');
       setSentInvitations(await loadSentInvitations(String(project.id)));
     } catch (e: any) {
-      toast({ title: e?.response?.data?.message ?? 'Falha ao enviar convite.', variant: 'destructive' });
+      toast({ title: e?.response?.data?.message ?? 'O convite não foi enviado. Tente novamente.', variant: 'destructive' });
     } finally {
       setInviteLoading(false);
     }
@@ -159,209 +161,251 @@ const ProjectDetails = () => {
     if (!project || !comment.trim()) return;
     try {
       const res = await projectService.addComment(String(project.id), comment.trim());
-      toast({ title: res?.data?.message ?? 'Comentário enviado!' });
+      toast({ title: res?.data?.message ?? 'Comentário publicado' });
       setComment('');
     } catch (e: any) {
-      toast({ title: e?.response?.data?.message ?? 'Falha ao enviar comentário.', variant: 'destructive' });
+      toast({ title: e?.response?.data?.message ?? 'O comentário não foi publicado. Tente novamente.', variant: 'destructive' });
     }
   };
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-fade-in max-w-4xl">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={16} /> Voltar
-        </Link>
-        <div className="aspect-[3/1] rounded-2xl bg-muted/40" />
+      <div className="space-y-6 animate-fade-in">
+        <BackLink to="/dashboard" label="Projectos" />
+        <div className="aspect-[3/1] animate-pulse rounded-lg bg-secondary" />
         <SkeletonLoader count={4} type="line" />
       </div>
     );
   }
 
-  if (error) {
+  if (error || !project) {
     return (
-      <div className="text-center py-16">
-        <p className="text-muted-foreground">{error}</p>
-        <Link to="/dashboard" className="text-primary hover:underline mt-2 inline-block">Voltar ao Dashboard</Link>
+      <div className="space-y-6">
+        <BackLink to="/dashboard" label="Projectos" />
+        <EmptyState
+          title={error ? 'Não foi possível abrir o projecto' : 'Este projecto não existe'}
+          description={error ?? 'Pode ter sido removido pelo autor.'}
+          action={<Link to="/dashboard" className="btn-primary">Ver todos os projectos</Link>}
+        />
       </div>
     );
   }
 
-  if (!project) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-muted-foreground">Projeto não encontrado.</p>
-        <Link to="/dashboard" className="text-primary hover:underline mt-2 inline-block">Voltar ao Dashboard</Link>
-      </div>
-    );
-  }
+  const created = new Date(project.createdAt);
+  const comments = project.comments ?? [];
+  const actionDisabled = actionLoading || isAuthor || hasPendingParticipationRequest || (isParticipating && !canLeave);
+  const actionLabel = isAuthor
+    ? 'É o autor deste projecto'
+    : isParticipating
+      ? 'Sair do projecto'
+      : hasPendingParticipationRequest
+        ? 'Pedido enviado'
+        : 'Pedir para participar';
+  const ActionIcon = isAuthor || hasPendingParticipationRequest ? Check : isParticipating ? UserMinus : UserPlus;
+
+  // Mostrado ao lado no ecrã grande e logo a seguir ao cabeçalho no telemóvel
+  const actions = (
+    <div className="panel space-y-2 p-4">
+      <button type="button" onClick={handleParticipate} disabled={actionDisabled} className={isParticipating && canLeave ? 'btn-secondary w-full' : 'btn-primary w-full'}>
+        <ActionIcon size={16} aria-hidden />
+        {actionLabel}
+      </button>
+      {project.pdfUrl && (
+        <a href={project.pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
+          <Download size={16} aria-hidden /> Descarregar PDF
+        </a>
+      )}
+      {project.repositoryUrl && (
+        <a href={project.repositoryUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
+          <ExternalLink size={16} aria-hidden /> Abrir repositório
+        </a>
+      )}
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl">
-      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={16} /> Voltar
-      </Link>
+    <div className="space-y-6 animate-fade-in">
+      <BackLink to="/dashboard" label="Projectos" />
 
-      {/* Cover */}
-      <div className="aspect-[3/1] rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center overflow-hidden">
-        <span className="text-6xl font-display font-bold text-primary/20">{project.title.charAt(0)}</span>
-      </div>
-
-      {/* Header */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <RankBadge rank={project.rank} size="lg" />
-          <span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-lg">{project.category}</span>
-        </div>
-        <h1 className="font-display text-3xl font-bold text-foreground">{project.title}</h1>
-        <p className="text-muted-foreground leading-relaxed">{project.description}</p>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><Calendar size={14} />{new Date(project.createdAt).toLocaleDateString('pt-BR')}</span>
-          <span className="flex items-center gap-1"><Users size={14} />{participants.length} participantes</span>
-          {isParticipating && <span className="flex items-center gap-1 text-rank-e"><Check size={14} />Tu participas</span>}
-          {hasPendingParticipationRequest && <span className="flex items-center gap-1 text-warning"><Mail size={14} />Pedido pendente</span>}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={handleParticipate}
-          disabled={actionLoading || isAuthor || hasPendingParticipationRequest || (isParticipating && !canLeave)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {isAuthor ? <Check size={16} /> : isParticipating ? <UserMinus size={16} /> : hasPendingParticipationRequest ? <Check size={16} /> : <UserPlus size={16} />}
-          {isAuthor ? 'Autor do projeto' : isParticipating ? 'Sair do Projeto' : hasPendingParticipationRequest ? 'Pedido enviado' : 'Pedir participação'}
-        </button>
-        {project.pdfUrl && (
-          <a href={project.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
-            <Download size={16} /> Baixar PDF
-          </a>
-        )}
-        {project.repositoryUrl && (
-          <a href={project.repositoryUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
-            <ExternalLink size={16} /> Repositório
-          </a>
-        )}
-      </div>
-
-      {/* Author & Participants */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="font-display font-semibold text-foreground mb-3">Autor</h3>
-          <UserCard user={project.author} compact />
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="font-display font-semibold text-foreground mb-3">Participantes ({participants.length})</h3>
-          {participants.length > 0 ? (
-            <div className="space-y-1">
-              {participants.map(u => <UserCard key={u.id} user={u} compact />)}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:gap-10">
+        <div className="min-w-0 space-y-8">
+          <header className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <RankBadge rank={project.rank} size="lg" />
+              <span className="h-8 w-px bg-border" aria-hidden />
+              <span className="text-sm font-medium text-primary">{project.category}</span>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Nenhum participante ainda.</p>
-          )}
-        </div>
-      </div>
+            <h1 className="detail-title max-w-[28ch]">{project.title}</h1>
+            <p className="max-w-[68ch] text-[15px] leading-relaxed text-muted-foreground">{project.description}</p>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              {!Number.isNaN(created.getTime()) && (
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={15} aria-hidden />
+                  Publicado a <time dateTime={project.createdAt}>{created.toLocaleDateString('pt-AO', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
+                </span>
+              )}
+              {isParticipating && !isAuthor && (
+                <span className="flex items-center gap-1.5 text-foreground">
+                  <Check size={15} className="text-rank-e" aria-hidden /> Faz parte da equipa
+                </span>
+              )}
+              {hasPendingParticipationRequest && (
+                <span className="flex items-center gap-1.5 text-foreground">
+                  <Mail size={15} className="text-warning" aria-hidden /> Pedido a aguardar resposta
+                </span>
+              )}
+            </div>
+          </header>
 
-      {/* Participation management */}
-      <div className="grid md:grid-cols-[1fr_1fr] gap-6">
-        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-          <div>
-            <h3 className="font-display font-semibold text-foreground flex items-center gap-2"><Mail size={18} /> Convidar participante</h3>
-            <p className="text-xs text-muted-foreground mt-1">Procura um utilizador e envia um convite para colaborar neste projecto.</p>
+          <div className="lg:hidden">{actions}</div>
+
+          <div className="aspect-[16/7] overflow-hidden rounded-lg border border-border">
+            {project.coverImage ? <img src={project.coverImage} alt="" className="h-full w-full object-cover" /> : <SonaCover seed={project.title} className="h-full w-full" />}
           </div>
-          {!canInvite ? (
-            <p className="text-sm text-muted-foreground">Só o autor do projecto pode enviar convites.</p>
-          ) : (
-            <>
+
+          <section aria-labelledby="comentarios" className="space-y-4">
+            <h2 id="comentarios" className="section-title flex items-center gap-2">
+              <MessageSquare size={17} aria-hidden /> Comentários
+              <span className="font-mono text-sm font-normal text-muted-foreground">{comments.length}</span>
+            </h2>
+
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendComment();
+              }}
+            >
+              <Avatar name={currentUser?.name} src={currentUser?.avatar} size="md" className="hidden sm:inline-flex" />
+              <input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="field h-10 flex-1"
+                placeholder="Escreva um comentário"
+                aria-label="Comentário"
+              />
+              <button type="submit" disabled={!comment.trim()} className="btn-primary">
+                Comentar
+              </button>
+            </form>
+
+            {comments.length > 0 ? (
+              <ul className="divide-y divide-border border-y border-border">
+                {comments.map((c) => (
+                  <li key={c.id} className="flex gap-3 py-4">
+                    <Avatar name={c.author?.name} src={c.author?.avatar} size="md" />
+                    <div className="min-w-0">
+                      <p className="text-sm">
+                        <span className="font-semibold text-foreground">{c.author?.name}</span>{' '}
+                        <time className="text-xs text-muted-foreground" dateTime={c.createdAt}>
+                          {new Date(c.createdAt).toLocaleDateString('pt-AO')}
+                        </time>
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-foreground/85">{c.content}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Ainda sem comentários. Deixe o primeiro.</p>
+            )}
+          </section>
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="hidden lg:block">{actions}</div>
+
+          <section className="panel p-4" aria-labelledby="equipa">
+            <h2 id="equipa" className="section-title mb-3 flex items-center justify-between">
+              Equipa
+              <span className="flex items-center gap-1 font-mono text-sm font-normal text-muted-foreground">
+                <Users size={14} aria-hidden /> {participants.length}
+              </span>
+            </h2>
+            <div className="space-y-0.5">
+              {participants.map((u) => (
+                <UserCard key={u.id} user={u} compact note={String(u.id) === String(project.author?.id) ? 'Autor' : undefined} />
+              ))}
+            </div>
+          </section>
+
+          {canInvite && (
+            <section className="panel space-y-3 p-4" aria-labelledby="convidar">
+              <div>
+                <h2 id="convidar" className="section-title">Convidar colegas</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Quem aceitar passa a fazer parte da equipa.</p>
+              </div>
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
                 <input
                   value={inviteSearch}
-                  onChange={e => setInviteSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
-                  placeholder="Pesquisar por nome, email ou username"
+                  onChange={(e) => setInviteSearch(e.target.value)}
+                  className="field h-10 pl-9"
+                  placeholder="Nome, email ou utilizador"
+                  aria-label="Pesquisar colegas para convidar"
                 />
               </div>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {inviteCandidates.length > 0 ? inviteCandidates.map(user => (
-                  <button
-                    type="button"
-                    key={user.id}
-                    onClick={() => setSelectedUserId(String(user.id))}
-                    className={`w-full flex items-center justify-between gap-3 rounded-xl border p-2 text-left transition-colors ${selectedUserId === String(user.id) ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'}`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-foreground truncate">{user.name}</span>
-                      <span className="block text-xs text-muted-foreground truncate">{user.email}</span>
-                    </span>
-                    {selectedUserId === String(user.id) && <Check size={16} className="text-primary shrink-0" />}
-                  </button>
-                )) : (
-                  <p className="text-sm text-muted-foreground">Nenhum utilizador disponível para convite.</p>
+              <div className="-mx-1 max-h-56 space-y-0.5 overflow-y-auto px-1" role="listbox" aria-label="Colegas disponíveis">
+                {inviteCandidates.length > 0 ? (
+                  inviteCandidates.map((u) => {
+                    const selected = selectedUserId === String(u.id);
+                    return (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        key={u.id}
+                        onClick={() => setSelectedUserId(selected ? '' : String(u.id))}
+                        className={`flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors ${selected ? 'bg-primary/10' : 'hover:bg-secondary'}`}
+                      >
+                        <Avatar name={u.name} src={u.avatar} size="xs" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-foreground">{u.name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{u.email}</span>
+                        </span>
+                        {selected && <Check size={15} className="shrink-0 text-primary" aria-hidden />}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="px-2 py-1 text-sm text-muted-foreground">{inviteSearch ? 'Ninguém encontrado com esse termo.' : 'Não há colegas disponíveis para convidar.'}</p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={handleInvite}
-                disabled={!selectedUserId || inviteLoading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 disabled:opacity-50"
-              >
-                <Mail size={16} /> Enviar convite
+              <button type="button" onClick={handleInvite} disabled={!selectedUserId || inviteLoading} className="btn-secondary w-full">
+                <Mail size={16} aria-hidden /> Enviar convite
               </button>
-            </>
+            </section>
           )}
-        </div>
 
-        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-          <div>
-            <h3 className="font-display font-semibold text-foreground">{canInvite ? 'Convites enviados' : 'Pedidos enviados'}</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              {canInvite ? 'Acompanha o estado dos convites que enviaste para este projecto.' : 'Acompanha o estado dos teus pedidos para este projecto.'}
-            </p>
-          </div>
-          {sentInvitations.length > 0 ? (
-            <div className="space-y-2">
-              {sentInvitations.map(inv => {
-                const status = invitationStatus[inv.status] ?? invitationStatus.pending;
-                return (
-                  <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{canInvite ? inv.to.name : inv.projectTitle}</p>
-                      <p className="text-xs text-muted-foreground truncate">{inv.to.email}</p>
-                    </div>
-                    <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{canInvite ? 'Ainda não enviaste convites para este projecto.' : 'Ainda não enviaste pedidos para este projecto.'}</p>
+          {(canInvite || sentInvitations.length > 0) && (
+            <section className="panel p-4" aria-labelledby="enviados">
+              <h2 id="enviados" className="section-title mb-3">
+                {canInvite ? 'Convites enviados' : 'Os seus pedidos'}
+              </h2>
+              {sentInvitations.length > 0 ? (
+                <ul className="space-y-2">
+                  {sentInvitations.map((inv) => {
+                    const status = invitationStatus[inv.status] ?? invitationStatus.pending;
+                    return (
+                      <li key={inv.id} className="flex items-center justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-foreground">{canInvite ? inv.to.name : inv.projectTitle}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{inv.to.email}</span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-foreground">
+                          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} aria-hidden />
+                          {status.label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ainda não enviou convites.</p>
+              )}
+            </section>
           )}
-        </div>
-      </div>
-
-      {/* Comments */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-        <h3 className="font-display font-semibold text-foreground flex items-center gap-2"><MessageSquare size={18} /> Comentários ({project.comments?.length ?? 0})</h3>
-        
-        <div className="flex gap-3">
-          <input value={comment} onChange={e => setComment(e.target.value)} className="flex-1 px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50" placeholder="Escreva um comentário..." />
-          <button onClick={handleSendComment} className="px-4 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">Enviar</button>
-        </div>
-
-        {(project.comments ?? []).map(c => (
-          <div key={c.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">{c.author.name.charAt(0)}</div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{c.author.name}</span>
-                <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">{c.content}</p>
-            </div>
-          </div>
-        ))}
+        </aside>
       </div>
     </div>
   );

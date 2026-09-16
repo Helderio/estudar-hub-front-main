@@ -1,16 +1,28 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-AO">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Estudar Hub - Plataforma Acadêmica Colaborativa</title>
-    <meta name="description" content="Publique, colabore e explore projetos acadêmicos. Conecte-se com estudantes universitários de todo o Brasil." />
-    <meta property="og:title" content="Estudar Hub" />
-    <meta property="og:description" content="Plataforma universitária para publicar, colaborar e explorar projetos acadêmicos." />
+    <title>EstudarHub — projectos académicos de Benguela</title>
+    <meta name="description" content="Publique projectos académicos, encontre colegas para colaborar e acompanhe eventos nas instituições de ensino superior de Benguela, Angola." />
+    <meta property="og:title" content="EstudarHub" />
+    <meta property="og:description" content="A plataforma onde estudantes do ensino superior angolano publicam e colaboram em projectos académicos." />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_AO" />
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#080D17" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/brand/estudarhub-mark.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/web-app-manifest-192x192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+      // Aplica o tema antes da primeira pintura para evitar o clarão no modo escuro
+      try {
+        if (localStorage.getItem('estudar-hub-theme') === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

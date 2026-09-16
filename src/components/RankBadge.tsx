@@ -1,32 +1,62 @@
 import type { Rank } from '@/types';
 import { RANK_INFO } from '@/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
-const rankStyles: Record<Rank, string> = {
-  E: 'bg-rank-e/15 text-rank-e border-rank-e/30',
-  D: 'bg-rank-d/15 text-rank-d border-rank-d/30',
-  C: 'bg-rank-c/15 text-rank-c border-rank-c/30',
-  B: 'bg-rank-b/15 text-rank-b border-rank-b/30',
-  A: 'bg-rank-a/15 text-rank-a border-rank-a/30',
-  S: 'bg-rank-s/15 text-rank-s border-rank-s/30',
+const rankTone: Record<Rank, string> = {
+  E: 'text-rank-e',
+  D: 'text-rank-d',
+  C: 'text-rank-c',
+  B: 'text-rank-b',
+  A: 'text-rank-a',
+  S: 'text-rank-s',
 };
 
 interface RankBadgeProps {
   rank: Rank;
   size?: 'sm' | 'md' | 'lg';
   showTooltip?: boolean;
+  /** Mostra o nome do nível ao lado do losango. */
+  withLabel?: boolean;
+  className?: string;
 }
 
-export const RankBadge = ({ rank, size = 'md', showTooltip = true }: RankBadgeProps) => {
-  const sizeClasses = {
-    sm: 'text-xs px-2 py-0.5',
-    md: 'text-sm px-2.5 py-1',
-    lg: 'text-base px-3 py-1.5 font-bold',
-  };
+const dims = {
+  sm: { box: 'h-7 w-7', letter: 'text-[11px]', label: 'text-xs' },
+  md: { box: 'h-8 w-8', letter: 'text-xs', label: 'text-sm' },
+  lg: { box: 'h-11 w-11', letter: 'text-base', label: 'text-sm' },
+};
+
+/** Losango sona com a letra do rank. A cor vem do nível. */
+export const RankDiamond = ({ rank, size = 'md', className }: { rank: Rank; size?: RankBadgeProps['size']; className?: string }) => (
+  <span className={cn('relative inline-grid place-items-center shrink-0', dims[size].box, rankTone[rank], className)}>
+    <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full" aria-hidden>
+      <path d="M20 2.5 37.5 20 20 37.5 2.5 20Z" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+    <span className={cn('relative font-display font-semibold leading-none', dims[size].letter)}>{rank}</span>
+  </span>
+);
+
+export const RankBadge = ({ rank, size = 'md', showTooltip = true, withLabel, className }: RankBadgeProps) => {
+  const showLabel = withLabel ?? size !== 'sm';
+  const info = RANK_INFO[rank];
 
   const badge = (
-    <span className={`inline-flex items-center gap-1 font-display font-bold border rounded-lg transition-theme ${rankStyles[rank]} ${sizeClasses[size]}`}>
-      Rank {rank}
+    <span
+      className={cn('inline-flex items-center gap-2 align-middle', className)}
+      aria-label={`Rank ${rank}: ${info.label}`}
+      tabIndex={showTooltip ? 0 : undefined}
+    >
+      <RankDiamond rank={rank} size={size} />
+      {showLabel &&
+        (size === 'lg' ? (
+          <span className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold text-foreground">Rank {rank}</span>
+            <span className="text-xs text-muted-foreground">{info.label}</span>
+          </span>
+        ) : (
+          <span className={cn('font-medium text-foreground', dims[size].label)}>Rank {rank}</span>
+        ))}
     </span>
   );
 
@@ -35,9 +65,11 @@ export const RankBadge = ({ rank, size = 'md', showTooltip = true }: RankBadgePr
   return (
     <Tooltip>
       <TooltipTrigger asChild>{badge}</TooltipTrigger>
-      <TooltipContent>
-        <p className="font-semibold">{RANK_INFO[rank].label}</p>
-        <p className="text-xs text-muted-foreground">{RANK_INFO[rank].description}</p>
+      <TooltipContent className="max-w-60">
+        <p className="font-semibold">
+          Rank {rank}: {info.label}
+        </p>
+        <p className="text-xs text-muted-foreground">{info.description}</p>
       </TooltipContent>
     </Tooltip>
   );

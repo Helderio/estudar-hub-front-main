@@ -1,16 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  Share2,
-  UserMinus,
-  UserPlus,
-  Users,
-} from 'lucide-react';
+import { Building2, CalendarDays, CheckCircle2, MapPin, Share2, UserMinus, UserPlus } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { UserCard } from '@/components/UserCard';
@@ -20,19 +10,20 @@ import { EVENT_TYPES } from '@/types';
 import type { EventType, UniversityEvent } from '@/types';
 import { eventService } from '@/services/eventService';
 import { unwrapApiResponseOrRaw } from '@/services/apiResponse';
+import { SonaCover, BackLink } from '@/shared/ui';
 
 const typeColors: Record<EventType, string> = {
-  hackathon: 'bg-rank-s/15 text-rank-s',
-  conference: 'bg-primary/15 text-primary',
-  contest: 'bg-rank-c/15 text-rank-c',
-  games: 'bg-rank-e/15 text-rank-e',
+  hackathon: 'text-rank-s',
+  conference: 'text-primary',
+  contest: 'text-rank-b',
+  games: 'text-rank-e',
 };
 
 const formatDate = (value?: string) => {
   if (!value) return 'Data por confirmar';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString('pt-BR', {
+  return date.toLocaleDateString('pt-AO', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
@@ -64,7 +55,7 @@ const EventDetails = () => {
         await loadEvent(id, () => active);
       } catch (e: any) {
         if (!active) return;
-        setError(e?.response?.data?.message ?? 'Falha ao carregar o evento.');
+        setError(e?.response?.data?.message ?? 'O servidor não respondeu.');
       } finally {
         if (active) setLoading(false);
       }
@@ -85,14 +76,14 @@ const EventDetails = () => {
       setActionLoading(true);
       if (isParticipating) {
         await eventService.leave(String(event.id));
-        toast({ title: 'Participação removida.' });
+        toast({ title: 'Inscrição cancelada' });
       } else {
         await eventService.participate(String(event.id));
-        toast({ title: 'Participação registrada!' });
+        toast({ title: 'Inscrição feita' });
       }
       await loadEvent(String(event.id));
     } catch (e: any) {
-      toast({ title: e?.response?.data?.message ?? 'Não foi possível atualizar a participação.', variant: 'destructive' });
+      toast({ title: e?.response?.data?.message ?? 'Não foi possível actualizar a inscrição. Tente novamente.', variant: 'destructive' });
     } finally {
       setActionLoading(false);
     }
@@ -106,7 +97,7 @@ const EventDetails = () => {
         return;
       }
       await navigator.clipboard.writeText(url);
-      toast({ title: 'Link copiado.' });
+      toast({ title: 'Ligação copiada' });
     } catch {
       toast({ title: 'Não foi possível partilhar o evento.', variant: 'destructive' });
     }
@@ -114,135 +105,124 @@ const EventDetails = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-fade-in max-w-5xl">
-        <Link to="/events" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={16} /> Voltar aos eventos
-        </Link>
-        <div className="aspect-[3/1] rounded-2xl bg-muted/40" />
+      <div className="space-y-6 animate-fade-in">
+        <BackLink to="/events" label="Eventos" />
+        <div className="aspect-[3/1] animate-pulse rounded-lg bg-secondary" />
         <SkeletonLoader count={5} type="line" />
       </div>
     );
   }
 
-  if (error) {
+  if (error || !event) {
     return (
-      <EmptyState
-        title="Não foi possível carregar"
-        description={error}
-        action={<Link to="/events" className="text-sm font-medium text-primary hover:underline">Voltar aos eventos</Link>}
-      />
-    );
-  }
-
-  if (!event) {
-    return (
-      <EmptyState
-        title="Evento não encontrado"
-        description="Este evento pode ter sido removido ou ainda não está disponível."
-        action={<Link to="/events" className="text-sm font-medium text-primary hover:underline">Voltar aos eventos</Link>}
-      />
+      <div className="space-y-6">
+        <BackLink to="/events" label="Eventos" />
+        <EmptyState
+          title={error ? 'Não foi possível abrir o evento' : 'Este evento não existe'}
+          description={error ?? 'Pode ter sido removido ou ainda não estar publicado.'}
+          action={<Link to="/events" className="btn-primary">Ver eventos</Link>}
+        />
+      </div>
     );
   }
 
   const type = event.type in EVENT_TYPES ? event.type : 'conference';
   const participants = event.participants ?? [];
+  const open = event.status === 'open';
+  const d = new Date(event.date);
+  const validDate = !Number.isNaN(d.getTime());
+
+  const actions = (
+    <div className="panel space-y-4 p-4">
+      <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <span className={`h-2 w-2 rounded-full ${open ? 'bg-rank-e' : 'bg-muted-foreground'}`} aria-hidden />
+        {open ? 'Inscrições abertas' : 'Inscrições encerradas'}
+      </p>
+      <button type="button" onClick={handleParticipation} disabled={actionLoading || !open} className={isParticipating ? 'btn-secondary w-full' : 'btn-primary w-full'}>
+        {isParticipating ? <UserMinus size={16} aria-hidden /> : <UserPlus size={16} aria-hidden />}
+        {isParticipating ? 'Cancelar inscrição' : 'Inscrever-me'}
+      </button>
+      {isParticipating && (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CheckCircle2 size={14} className="text-rank-e" aria-hidden /> Está inscrito neste evento.
+        </p>
+      )}
+      <button type="button" onClick={handleShare} className="btn-secondary w-full">
+        <Share2 size={16} aria-hidden /> Partilhar
+      </button>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl">
-      <Link to="/events" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={16} /> Voltar aos eventos
-      </Link>
+    <div className="space-y-6 animate-fade-in">
+      <BackLink to="/events" label="Eventos" />
 
-      <div className="relative aspect-[3/1] min-h-[220px] overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/20 to-rank-e/10 border border-border">
-        {event.banner ? (
-          <img src={event.banner} alt={event.title} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <span className="font-display text-7xl font-bold text-primary/20">{event.title.charAt(0)}</span>
-          </div>
-        )}
-        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <span className={`rounded-lg px-3 py-1 text-xs font-medium ${typeColors[type]}`}>{EVENT_TYPES[type]}</span>
-          <span className={`rounded-lg px-3 py-1 text-xs font-medium ${event.status === 'open' ? 'bg-rank-e/15 text-rank-e' : 'bg-destructive/15 text-destructive'}`}>
-            {event.status === 'open' ? 'Aberto' : 'Encerrado'}
-          </span>
-        </div>
-      </div>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:gap-10">
+        <div className="min-w-0 space-y-8">
+          <header className="flex gap-5">
+            {validDate && (
+              <time dateTime={event.date} className="hidden w-20 shrink-0 flex-col items-center rounded-lg border border-border bg-card py-3 sm:flex">
+                <span className="text-xs font-medium text-muted-foreground">{d.toLocaleDateString('pt-AO', { month: 'short' }).replace('.', '')}</span>
+                <span className="font-display text-3xl font-medium leading-none text-foreground">{d.getDate()}</span>
+                <span className="mt-1 font-mono text-[11px] text-muted-foreground">{d.getFullYear()}</span>
+              </time>
+            )}
+            <div className="min-w-0 space-y-3">
+              <p className={`text-sm font-medium ${typeColors[type]}`}>{EVENT_TYPES[type]}</p>
+              <h1 className="detail-title">{event.title}</h1>
+              <p className="max-w-[68ch] text-[15px] leading-relaxed text-muted-foreground">{event.description}</p>
+            </div>
+          </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <h1 className="font-display text-3xl font-bold text-foreground">{event.title}</h1>
-            <p className="text-muted-foreground leading-relaxed">{event.description}</p>
+          <div className="lg:hidden">{actions}</div>
+
+          <div className="aspect-[16/7] overflow-hidden rounded-lg border border-border">
+            {event.banner ? <img src={event.banner} alt="" className="h-full w-full object-cover" /> : <SonaCover seed={event.title} className="h-full w-full" />}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <CalendarDays size={18} className="mb-2 text-primary" />
-              <p className="text-xs text-muted-foreground">Data</p>
-              <p className="text-sm font-medium text-foreground">{formatDate(event.date)}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <MapPin size={18} className="mb-2 text-primary" />
-              <p className="text-xs text-muted-foreground">Local</p>
-              <p className="text-sm font-medium text-foreground">{event.location || 'Local por confirmar'}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <Users size={18} className="mb-2 text-primary" />
-              <p className="text-xs text-muted-foreground">Participantes</p>
-              <p className="text-sm font-medium text-foreground">{participants.length}</p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-4">
-            <h2 className="font-display font-semibold text-foreground mb-3">Participantes</h2>
+          <section aria-labelledby="inscritos">
+            <h2 id="inscritos" className="section-title mb-3 flex items-center gap-2">
+              Inscritos <span className="font-mono text-sm font-normal text-muted-foreground">{participants.length}</span>
+            </h2>
             {participants.length > 0 ? (
-              <div className="grid gap-1 sm:grid-cols-2">
-                {participants.map((participant) => <UserCard key={participant.id} user={participant} compact />)}
+              <div className="grid gap-x-6 gap-y-0.5 border-t border-border pt-3 sm:grid-cols-2">
+                {participants.map((participant) => (
+                  <UserCard key={participant.id} user={participant} compact />
+                ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Ainda não há participantes inscritos.</p>
+              <p className="text-sm text-muted-foreground">{open ? 'Ainda ninguém se inscreveu. Seja o primeiro.' : 'Este evento não teve inscrições.'}</p>
             )}
-          </div>
+          </section>
         </div>
 
-        <aside className="space-y-4">
-          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Organização</p>
-              <p className="text-sm font-medium text-foreground">{event.organizer || event.institution || 'Organização por confirmar'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Instituição</p>
-              <p className="text-sm font-medium text-foreground">{event.institution || event.institutionObj?.nome || 'Instituição por confirmar'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Estado da inscrição</p>
-              <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                {isParticipating ? <CheckCircle2 size={16} className="text-rank-e" /> : <Clock size={16} className="text-muted-foreground" />}
-                {isParticipating ? 'Estás a participar' : 'Ainda não estás inscrito'}
-              </p>
-            </div>
-          </div>
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="hidden lg:block">{actions}</div>
 
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={handleParticipation}
-              disabled={actionLoading || event.status === 'closed'}
-              className="inline-flex items-center justify-center gap-2 rounded-xl gradient-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {isParticipating ? <UserMinus size={16} /> : <UserPlus size={16} />}
-              {isParticipating ? 'Sair do evento' : 'Participar no evento'}
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
-            >
-              <Share2 size={16} /> Partilhar
-            </button>
-          </div>
+          <dl className="panel divide-y divide-border text-sm">
+            <div className="flex gap-3 p-4">
+              <CalendarDays size={17} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <dt className="text-xs text-muted-foreground">Data</dt>
+                <dd className="font-medium text-foreground">{formatDate(event.date)}</dd>
+              </div>
+            </div>
+            <div className="flex gap-3 p-4">
+              <MapPin size={17} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <dt className="text-xs text-muted-foreground">Local</dt>
+                <dd className="font-medium text-foreground">{event.location || 'Por confirmar'}</dd>
+              </div>
+            </div>
+            <div className="flex gap-3 p-4">
+              <Building2 size={17} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+              <div>
+                <dt className="text-xs text-muted-foreground">Organização</dt>
+                <dd className="font-medium text-foreground">{event.organizer || event.institution || 'Por confirmar'}</dd>
+                {event.institution && event.organizer && event.institution !== event.organizer && <dd className="text-xs text-muted-foreground">{event.institution}</dd>}
+              </div>
+            </div>
+          </dl>
         </aside>
       </div>
     </div>

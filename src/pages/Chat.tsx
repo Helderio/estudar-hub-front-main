@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Send, ArrowLeft, Search } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Avatar, Lusona } from '@/shared/ui';
 import { cn } from '@/lib/utils';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { chatService } from '@/services/chatService';
@@ -51,7 +52,7 @@ const Chat = () => {
         }
       } catch (e: any) {
         if (!alive) return;
-        setError(e?.response?.data?.message ?? 'Falha ao carregar chats.');
+        setError(e?.response?.data?.message ?? 'Não foi possível carregar as conversas.');
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -101,7 +102,7 @@ const Chat = () => {
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' });
   };
 
   const filteredChats = useMemo(() => {
@@ -132,25 +133,24 @@ const Chat = () => {
     }
   };
 
-  // Chat list view
-  const ChatList = () => (
-    <div className="flex flex-col h-full">
-      {/* Search */}
-      <div className="p-4 border-b border-border">
+  // Funções de renderização (não componentes): assim os campos de texto não são recriados a cada tecla
+  const renderChatList = () => (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="border-b border-border p-3">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Pesquisar conversas..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Pesquisar conversas"
+            aria-label="Pesquisar conversas"
+            className="field h-9 pl-9"
           />
         </div>
       </div>
 
-      {/* Conversations */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-4">
             <SkeletonLoader count={6} type="line" />
@@ -158,149 +158,138 @@ const Chat = () => {
         ) : error ? (
           <p className="p-4 text-sm text-muted-foreground">{error}</p>
         ) : filteredChats.length === 0 ? (
-          <div className="p-6 text-center">
-            <p className="text-sm font-medium text-foreground">Sem conversas</p>
-            <p className="mt-1 text-xs text-muted-foreground">Abra um perfil e toque em Mensagem para começar.</p>
+          <div className="px-6 py-10 text-center">
+            <p className="text-sm font-semibold text-foreground">{searchQuery ? 'Nenhuma conversa encontrada' : 'Ainda sem conversas'}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {searchQuery ? 'Pesquise pelo nome da pessoa.' : 'Abra o perfil de um colega e escolha Enviar mensagem.'}
+            </p>
+            {!searchQuery && (
+              <Link to="/people" className="btn-secondary mt-4 h-9">
+                Ver pessoas
+              </Link>
+            )}
           </div>
         ) : (
-          filteredChats.map(chat => {
-            const other = getOtherParticipant(chat);
-            const last = getLastMessage(chat);
-            const initials = other?.name
-              ? `${other.name.charAt(0)}${other.name.split(' ')[1]?.charAt(0) ?? ''}`
-              : '?';
-            return (
-              <button
-                key={chat.id}
-                onClick={() => selectChat(chat.id)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors border-b border-border/50 text-left"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                  {initials}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-foreground truncate">{other?.name ?? 'Chat'}</p>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{last ? formatTime(last.created_at) : ''}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {last ? (
-                      <>
-                        {last.sender_id === currentUserId ? 'Você: ' : ''}{last.content}
-                      </>
-                    ) : (
-                      'Sem mensagens ainda'
+          <ul>
+            {filteredChats.map((chat) => {
+              const other = getOtherParticipant(chat);
+              const last = getLastMessage(chat);
+              const active = chat.id === selectedChatId;
+              return (
+                <li key={chat.id}>
+                  <button
+                    onClick={() => selectChat(chat.id)}
+                    aria-current={active ? 'true' : undefined}
+                    className={cn(
+                      'relative flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
+                      active ? 'bg-secondary' : 'hover:bg-secondary/60',
                     )}
-                  </p>
-                </div>
-              </button>
-            );
-          })
+                  >
+                    {active && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary" aria-hidden />}
+                    <Avatar name={other?.name} src={other?.avatar} size="md" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-sm font-semibold text-foreground">{other?.name ?? 'Conversa'}</span>
+                        <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{last ? formatTime(last.created_at) : ''}</span>
+                      </span>
+                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                        {last ? `${last.sender_id === currentUserId ? 'Eu: ' : ''}${last.content}` : 'Sem mensagens'}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>
   );
 
-  // Chat room view
-  const ChatRoom = () => {
+  const renderChatRoom = () => {
     if (!selectedChat) return null;
     const other = getOtherParticipant(selectedChat);
     if (!other) {
-      return (
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          Chat sem participantes.
-        </div>
-      );
+      return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Esta conversa não tem participantes.</div>;
     }
+    const messages = selectedChat.messages ?? [];
 
     return (
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
-          <button onClick={() => selectChat(null)} className="lg:hidden p-1 rounded-lg text-muted-foreground hover:text-foreground">
-            <ArrowLeft size={20} />
+      <div className="flex h-full min-h-0 flex-col">
+        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <button onClick={() => selectChat(null)} aria-label="Voltar às conversas" className="-ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground lg:hidden">
+            <ArrowLeft size={18} />
           </button>
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-            {other.name ? `${other.name.charAt(0)}${other.name.split(' ')[1]?.charAt(0) ?? ''}` : '?'}
+          <Avatar name={other.name} src={other.avatar} size="md" />
+          <div className="min-w-0">
+            <Link to={`/profile/${other.id}`} className="block truncate text-sm font-semibold text-foreground hover:text-primary">
+              {other.name}
+            </Link>
+            <p className="truncate text-xs text-muted-foreground">{[other.institution, other.course].filter(Boolean).join(', ')}</p>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">{other.name}</p>
-            <p className="text-[10px] text-muted-foreground">{other.institution} · {other.course}</p>
-          </div>
-        </div>
+        </header>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {(selectedChat.messages ?? []).map(msg => {
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-5" aria-live="polite">
+          {messages.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Escreva a primeira mensagem a {other.name.split(' ')[0]}.</p>}
+          {messages.map((msg) => {
             const isMe = msg.sender_id === currentUserId;
             return (
               <div key={msg.id} className={cn('flex', isMe ? 'justify-end' : 'justify-start')}>
-                <div className={cn(
-                  'max-w-[75%] px-4 py-2.5 rounded-2xl text-sm',
-                  isMe
-                    ? 'bg-primary text-primary-foreground rounded-br-md'
-                    : 'bg-muted text-foreground rounded-bl-md'
-                )}>
-                  <p>{msg.content}</p>
-                  <p className={cn('text-[10px] mt-1', isMe ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
-                    {formatTime(msg.created_at)}
-                  </p>
+                <div
+                  className={cn(
+                    'max-w-[78%] rounded-lg px-3.5 py-2 text-sm leading-relaxed',
+                    isMe ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border border-border bg-background text-foreground',
+                  )}
+                >
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  <p className={cn('mt-0.5 text-right font-mono text-[10px]', isMe ? 'text-primary-foreground/70' : 'text-muted-foreground')}>{formatTime(msg.created_at)}</p>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Input */}
-        <div className="p-4 border-t border-border bg-card">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="Escreva uma mensagem..."
-              className="flex-1 px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
-              onKeyDown={e => e.key === 'Enter' && message.trim() && handleSendMessage()}
-            />
-            <button
-              onClick={handleSendMessage}
-              className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground hover:opacity-90 transition-opacity shrink-0"
-            >
-              <Send size={16} />
-            </button>
-          </div>
-        </div>
+        <form
+          className="flex items-center gap-2 border-t border-border p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (message.trim()) handleSendMessage();
+          }}
+        >
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Escrever mensagem"
+            aria-label="Mensagem"
+            className="field h-10 flex-1"
+          />
+          <button type="submit" disabled={!message.trim()} aria-label="Enviar" className="btn-primary h-10 w-10 px-0">
+            <Send size={16} aria-hidden />
+          </button>
+        </form>
       </div>
     );
   };
 
   return (
-    <div className="animate-fade-in -m-4 md:-m-6 lg:-m-8">
-      <div className="h-[calc(100vh-8rem)] lg:h-[calc(100vh-4rem)] flex bg-card border border-border rounded-none lg:rounded-2xl overflow-hidden">
-        {/* Sidebar - chat list */}
-        <div className={cn(
-          'w-full lg:w-80 border-r border-border flex-shrink-0',
-          selectedChatId ? 'hidden lg:flex lg:flex-col' : 'flex flex-col'
-        )}>
-          <div className="p-4 border-b border-border">
-            <h1 className="text-lg font-bold text-foreground">Mensagens</h1>
+    <div className="animate-fade-in">
+      <div className="panel flex h-[calc(100dvh-12.5rem)] min-h-[420px] overflow-hidden lg:h-[calc(100dvh-9.5rem)]">
+        <div className={cn('w-full shrink-0 border-r border-border lg:flex lg:w-80 lg:flex-col', selectedChatId ? 'hidden' : 'flex flex-col')}>
+          <div className="border-b border-border px-4 py-3.5">
+            <h1 className="font-display text-lg font-medium">Chat</h1>
           </div>
-          <ChatList />
+          {renderChatList()}
         </div>
 
-        {/* Chat room */}
-        <div className={cn(
-          'flex-1',
-          selectedChatId ? 'flex flex-col' : 'hidden lg:flex lg:items-center lg:justify-center'
-        )}>
+        <div className={cn('min-w-0 flex-1', selectedChatId ? 'flex flex-col' : 'hidden lg:flex lg:items-center lg:justify-center')}>
           {selectedChatId ? (
-            <ChatRoom />
+            renderChatRoom()
           ) : (
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Send size={24} className="text-primary" />
-              </div>
-              <p className="text-muted-foreground">Selecione uma conversa ou abra um perfil e toque em Mensagem</p>
+            <div className="max-w-xs px-6 text-center">
+              <Lusona cols={3} rows={2} className="mx-auto h-12 w-auto" strokeWidth={1.75} lineClassName="text-primary/60" dotClassName="text-foreground/40" />
+              <p className="mt-4 text-sm font-semibold text-foreground">Escolha uma conversa</p>
+              <p className="mt-1 text-sm text-muted-foreground">Ou abra o perfil de um colega para começar uma nova.</p>
             </div>
           )}
         </div>

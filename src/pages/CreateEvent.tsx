@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { Field, FormActions, FormSection, PageHeader } from '@/shared/ui';
 import { useToast } from '@/hooks/use-toast';
 import { eventService } from '@/services/eventService';
 import { institutionService } from '@/services/institutionService';
 import { unwrapApiResponseOrRaw, type PageResponse } from '@/services/apiResponse';
 
 const eventTypes = [
-  { value: 'hackathon', label: '💻 Hackathon' },
-  { value: 'conference', label: '🎤 Conferência' },
-  { value: 'contest', label: '🏆 Concurso' },
-  { value: 'games', label: '⚽ Jogos Universitários' },
+  { value: 'hackathon', label: 'Hackathon' },
+  { value: 'conference', label: 'Conferência' },
+  { value: 'contest', label: 'Concurso' },
+  { value: 'games', label: 'Jogos universitários' },
 ];
 
 type InstitutionOption = { id: string; nome: string };
@@ -45,7 +46,6 @@ const CreateEvent = () => {
   });
 
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
-  const inputClass = 'w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 text-sm';
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +65,7 @@ const CreateEvent = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.date || !form.location || !form.type) {
-      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      toast({ title: 'Faltam campos obrigatórios', description: 'Indique o título, o tipo, a data e o município.', variant: 'destructive' });
       return;
     }
     try {
@@ -79,72 +79,85 @@ const CreateEvent = () => {
         institutionId: Number.isFinite(institutionIdNum as number) ? (institutionIdNum as number) : undefined,
         type: form.type,
       });
-      toast({ title: 'Evento criado com sucesso!' });
+      toast({ title: 'Evento publicado' });
       navigate('/events');
     } catch (err: unknown) {
-      toast({ title: getApiErrorMessage(err) ?? 'Erro ao criar evento.', variant: 'destructive' });
+      toast({ title: getApiErrorMessage(err) ?? 'Não foi possível publicar. Tente novamente.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl animate-fade-in">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
-        <ArrowLeft size={16} /> Voltar
-      </button>
+    <div className="max-w-4xl space-y-8 animate-fade-in">
+      <PageHeader title="Novo evento" description="Os estudantes vêem o evento na lista e podem inscrever-se enquanto as inscrições estiverem abertas." back={{ to: '/events', label: 'Eventos' }} />
 
-      <h1 className="text-2xl font-bold text-foreground mb-1">Criar Evento</h1>
-      <p className="text-sm text-muted-foreground mb-6">Organize um novo evento académico.</p>
+      <form onSubmit={handleSubmit} noValidate>
+        <FormSection title="O evento">
+          <Field id="title" label="Título" required>
+            <input id="title" type="text" value={form.title} onChange={(e) => update('title', e.target.value)} className="field" placeholder="Hackathon ISPB 2026" />
+          </Field>
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium text-foreground">
+              Tipo <span className="text-muted-foreground" aria-hidden>*</span>
+            </legend>
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              {eventTypes.map((t) => {
+                const checked = form.type === t.value;
+                return (
+                  <label
+                    key={t.value}
+                    className={`flex h-11 cursor-pointer items-center justify-center rounded-md border px-3 text-center text-sm font-medium transition-colors ${
+                      checked ? 'border-primary bg-primary/10 text-foreground' : 'border-input bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                    }`}
+                  >
+                    <input type="radio" name="type" value={t.value} checked={checked} onChange={() => update('type', t.value)} className="sr-only" />
+                    {t.label}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+          <Field id="description" label="Descrição">
+            <textarea id="description" value={form.description} onChange={(e) => update('description', e.target.value)} className="field min-h-[110px] resize-y" placeholder="Programa, a quem se destina e o que levar." />
+          </Field>
+        </FormSection>
 
-      <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Título *</label>
-          <input type="text" value={form.title} onChange={e => update('title', e.target.value)} className={inputClass} placeholder="Nome do evento" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Descrição</label>
-          <textarea value={form.description} onChange={e => update('description', e.target.value)} className={`${inputClass} min-h-[100px] resize-y`} placeholder="Descreva o evento..." />
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Data *</label>
-            <input type="date" value={form.date} onChange={e => update('date', e.target.value)} className={inputClass} />
+        <FormSection title="Quando e onde">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field id="date" label="Data" required>
+              <input id="date" type="date" value={form.date} onChange={(e) => update('date', e.target.value)} className="field" />
+            </Field>
+            <Field id="location" label="Município" required>
+              <select id="location" value={form.location} onChange={(e) => update('location', e.target.value)} className="field field-select">
+                <option value="">Escolher município</option>
+                <option value="Benguela">Benguela</option>
+                <option value="Lobito">Lobito</option>
+                <option value="Catumbela">Catumbela</option>
+              </select>
+            </Field>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Local *</label>
-            <select value={form.location} onChange={e => update('location', e.target.value)} className={inputClass}>
-              <option value="">Selecione...</option>
-              <option value="Benguela">Benguela</option>
-              <option value="Lobito">Lobito</option>
-              <option value="Catumbela">Catumbela</option>
+          <Field id="institution" label="Instituição organizadora">
+            <select id="institution" value={form.institutionId} onChange={(e) => update('institutionId', e.target.value)} className="field field-select">
+              <option value="">Nenhuma em particular</option>
+              {institutionOptions.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nome}
+                </option>
+              ))}
             </select>
-          </div>
-        </div>
+          </Field>
+        </FormSection>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Instituição</label>
-            <select value={form.institutionId} onChange={e => update('institutionId', e.target.value)} className={inputClass}>
-              <option value="">Selecione...</option>
-              {institutionOptions.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Tipo de evento *</label>
-            <select value={form.type} onChange={e => update('type', e.target.value)} className={inputClass}>
-              <option value="">Selecione...</option>
-              {eventTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <button type="submit" disabled={isLoading} className="w-full py-3 rounded-xl gradient-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-          {isLoading && <Loader2 size={16} className="animate-spin" />}
-          Criar Evento
-        </button>
+        <FormActions>
+          <button type="button" onClick={() => navigate(-1)} className="btn-secondary">
+            Cancelar
+          </button>
+          <button type="submit" disabled={isLoading} className="btn-primary">
+            {isLoading && <Loader2 size={16} className="animate-spin" aria-hidden />}
+            Publicar evento
+          </button>
+        </FormActions>
       </form>
     </div>
   );

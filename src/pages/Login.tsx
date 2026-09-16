@@ -15,9 +15,9 @@ const Login = () => {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!email) e.email = 'Email é obrigatório';
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Email inválido';
-    if (!password) e.password = 'Senha é obrigatória';
+    if (!email) e.email = 'Indique o seu email.';
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Este email não parece válido.';
+    if (!password) e.password = 'Indique a sua palavra-passe.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -27,47 +27,86 @@ const Login = () => {
     if (!validate()) return;
     try {
       await login(email, password);
-      toast({ title: 'Bem-vindo de volta!' });
+      toast({ title: 'Sessão iniciada' });
       navigate('/dashboard');
     } catch {
-      toast({ title: 'Erro ao entrar', description: 'Verifique as suas credenciais.', variant: 'destructive' });
+      toast({ title: 'Não foi possível entrar', description: 'O email ou a palavra-passe estão incorrectos.', variant: 'destructive' });
     }
   };
 
   return (
-    <div className="w-full max-w-md animate-fade-in">
-      <div className="text-center mb-8">
-        <h1 className="font-display text-2xl font-bold text-foreground">Entrar na sua conta</h1>
-        <p className="text-sm text-muted-foreground mt-2">Acesse os seus projectos e continue a aprender.</p>
-      </div>
+    <div className="w-full max-w-[380px] animate-fade-in">
+      <h1 className="font-display text-[28px] font-medium text-foreground">Entrar</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Continue onde ficou nos seus projectos.</p>
 
-      <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50" placeholder="seu@email.com" />
-            {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="field"
+            placeholder="nome@instituicao.ao"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'email-erro' : undefined}
+          />
+          {errors.email && (
+            <p id="email-erro" className="mt-1.5 text-xs text-destructive">
+              {errors.email}
+            </p>
+          )}
+        </div>
+        <div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground">
+            Palavra-passe
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="field pr-11"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'password-erro' : undefined}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Esconder palavra-passe' : 'Mostrar palavra-passe'}
+              className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
-            <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 pr-10" placeholder="••••••••" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
-          </div>
-          <button type="submit" disabled={isLoading} className="w-full py-2.5 rounded-xl gradient-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-            {isLoading ? <Loader2 size={18} className="animate-spin" /> : null}
-            Entrar
-          </button>
-        </form>
+          {errors.password && (
+            <p id="password-erro" className="mt-1.5 text-xs text-destructive">
+              {errors.password}
+            </p>
+          )}
+        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent disabled:opacity-60"
+        >
+          {isLoading && <Loader2 size={17} className="animate-spin" />}
+          Entrar
+        </button>
+      </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Não tem conta? <Link to="/register" className="text-primary font-medium hover:underline">Criar conta</Link>
-        </p>
-      </div>
+      <p className="mt-8 border-t border-border pt-6 text-sm text-muted-foreground">
+        Ainda não tem conta?{' '}
+        <Link to="/register" className="font-semibold text-primary hover:underline">
+          Criar conta
+        </Link>
+      </p>
     </div>
   );
 };

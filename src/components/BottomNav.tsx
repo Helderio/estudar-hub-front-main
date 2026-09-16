@@ -1,45 +1,35 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderKanban, CalendarDays, MessageCircle, User, Users } from 'lucide-react';
+import { FolderKanban, CalendarDays, MessageCircle, User, Users } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { to: '/dashboard', icon: Home, label: 'Home' },
-  { to: '/dashboard', icon: FolderKanban, label: 'Projectos', match: '/dashboard' },
-  { to: '/events', icon: CalendarDays, label: 'Eventos' },
-  { to: '/people', icon: Users, label: 'Pessoas' },
-  { to: '/chat', icon: MessageCircle, label: 'Chat' },
-];
 
 export const BottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  const allItems = [
-    ...navItems,
-    { to: `/profile/${user?.id || '1'}`, icon: User, label: 'Perfil', match: '/profile' },
+  const items = [
+    { to: '/dashboard', match: ['/dashboard', '/projects', '/create-project'], icon: FolderKanban, label: 'Projectos' },
+    { to: '/events', match: ['/events', '/create-event'], icon: CalendarDays, label: 'Eventos' },
+    { to: '/people', match: ['/people'], icon: Users, label: 'Pessoas' },
+    { to: '/chat', match: ['/chat'], icon: MessageCircle, label: 'Chat' },
+    { to: user ? `/profile/${user.id}` : '/login', match: ['/profile', '/edit-profile'], icon: User, label: 'Perfil' },
   ];
 
-  // Remove duplicate dashboard
-  const items = allItems.filter((item, i) => i !== 1);
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav aria-label="Principal" className="safe-area-bottom fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm lg:hidden">
+      <div className="mx-auto grid h-16 max-w-md grid-cols-5">
         {items.map((item) => {
-          const matchPath = (item as any).match || item.to;
-          const isActive = location.pathname === item.to || location.pathname.startsWith(matchPath);
+          const active = item.match.some((m) => location.pathname.startsWith(m));
           return (
             <Link
               key={item.label}
               to={item.to}
-              className={cn(
-                'flex flex-col items-center justify-center gap-0.5 w-16 py-1 rounded-xl transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground'
-              )}
+              aria-current={active ? 'page' : undefined}
+              className={cn('relative flex flex-col items-center justify-center gap-1 transition-colors', active ? 'text-foreground' : 'text-muted-foreground')}
             >
-              <item.icon size={20} strokeWidth={isActive ? 2.5 : 1.5} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" />}
+              <item.icon size={20} strokeWidth={active ? 2.25 : 1.75} className={cn(active && 'text-primary')} />
+              <span className={cn('text-[11px]', active ? 'font-semibold' : 'font-medium')}>{item.label}</span>
             </Link>
           );
         })}

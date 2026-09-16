@@ -1,48 +1,60 @@
 import { Link } from 'react-router-dom';
-import { Users, Calendar } from 'lucide-react';
+import { Users } from 'lucide-react';
 import type { Project } from '@/types';
 import { RankBadge } from './RankBadge';
+import { Avatar, SonaCover } from '@/shared/ui';
 
 interface ProjectCardProps {
   project: Project;
 }
 
+const fmtDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-AO', { month: 'short', year: 'numeric' });
+};
+
 export const ProjectCard = ({ project }: ProjectCardProps) => {
+  const authorName = project.author?.name ?? 'Autor desconhecido';
+  const participants = project.participants?.length ?? 0;
+
   return (
-    <Link to={`/projects/${project.id}`} className="group block">
-      <div className="rounded-xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30">
-        <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
-          {project.coverImage ? (
-            <img src={project.coverImage} alt={project.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-4xl font-display font-bold text-primary/30">{project.title.charAt(0)}</span>
-            </div>
-          )}
-          <div className="absolute top-3 right-3">
-            <RankBadge rank={project.rank} size="sm" />
-          </div>
-        </div>
-        <div className="p-4 space-y-3">
-          <div>
-            <span className="text-xs font-medium text-primary">{project.category}</span>
-            <h3 className="font-display font-bold text-card-foreground mt-1 group-hover:text-primary transition-colors line-clamp-1">{project.title}</h3>
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                {project.author.name.charAt(0)}
-              </div>
-              <span className="text-xs text-muted-foreground">{project.author.name}</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Users size={12} />{project.participants.length}</span>
-              <span className="flex items-center gap-1"><Calendar size={12} />{new Date(project.createdAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
-            </div>
-          </div>
+    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/50">
+      <div className="relative aspect-[16/9] border-b border-border">
+        {project.coverImage ? (
+          <img src={project.coverImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <SonaCover seed={project.title} className="h-full w-full" />
+        )}
+        <div className="absolute left-3 top-3 rounded-full bg-card/95 p-0.5 shadow-sm">
+          <RankBadge rank={project.rank} size="sm" />
         </div>
       </div>
-    </Link>
+
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-xs font-medium text-primary">{project.category}</p>
+        <h3 className="mt-1.5 line-clamp-2 text-[15px] font-semibold leading-snug text-card-foreground">
+          <Link to={`/projects/${project.id}`} className="after:absolute after:inset-0 focus-visible:outline-none">
+            {project.title}
+          </Link>
+        </h3>
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{project.description}</p>
+
+        <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-muted-foreground">
+          <span className="flex min-w-0 items-center gap-2">
+            <Avatar name={authorName} src={project.author?.avatar} size="xs" />
+            <span className="truncate">{authorName}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-3">
+            <span className="flex items-center gap-1" title={`${participants} participantes`}>
+              <Users size={13} aria-hidden />
+              <span className="font-mono">{participants}</span>
+            </span>
+            <time dateTime={project.createdAt}>{fmtDate(project.createdAt)}</time>
+          </span>
+        </div>
+      </div>
+      {/* Anel de foco para toda a cartão quando a ligação tem foco */}
+      <span className="pointer-events-none absolute inset-0 rounded-lg ring-primary group-has-[a:focus-visible]:ring-2" aria-hidden />
+    </article>
   );
 };

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, GraduationCap, Loader2, MessageCircle, Search, UserRound } from 'lucide-react';
+import { Building2, GraduationCap, Loader2, MessageCircle } from 'lucide-react';
+import { Avatar, PageHeader } from '@/shared/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { RankBadge } from '@/components/RankBadge';
 import { SearchBar } from '@/components/SearchBar';
@@ -34,7 +35,7 @@ const People = () => {
         setUsers(page?.content ?? []);
       } catch (e: any) {
         if (!alive) return;
-        setError(e?.response?.data?.message ?? 'Falha ao carregar pessoas.');
+        setError(e?.response?.data?.message ?? 'O servidor não respondeu.');
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -59,7 +60,7 @@ const People = () => {
       navigate(`/chat?chatId=${chat.id}`);
     } catch (e: any) {
       toast({
-        title: e?.response?.data?.message ?? 'Não foi possível iniciar o chat.',
+        title: e?.response?.data?.message ?? 'Não foi possível abrir a conversa. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
@@ -68,82 +69,62 @@ const People = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Pessoas</h1>
-        <p className="text-sm text-muted-foreground">Encontre colegas, professores e participantes da comunidade.</p>
-      </div>
+    <div className="space-y-8 animate-fade-in">
+      <PageHeader title="Pessoas" description="Estudantes e docentes da comunidade. Veja o que já publicaram ou comece uma conversa." />
 
-      <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome, email ou username..." />
+      <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome, email ou utilizador" />
 
       {loading ? (
-        <SkeletonLoader count={8} type="card" />
+        <SkeletonLoader count={6} type="line" />
       ) : error ? (
-        <EmptyState title="Não foi possível carregar" description={error} />
+        <EmptyState title="Não foi possível carregar a lista" description={`${error} Verifique a ligação e recarregue a página.`} />
       ) : visibleUsers.length === 0 ? (
         <EmptyState
-          title="Nenhuma pessoa encontrada"
-          description="Tente pesquisar por outro nome, email ou username."
-          icon={<Search className="text-muted-foreground" size={28} />}
+          title={search ? 'Ninguém encontrado' : 'Ainda não há outras pessoas'}
+          description={search ? `Nenhum resultado para "${search}". Tente o nome ou o email completo.` : 'Quando colegas criarem conta, aparecem aqui.'}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {visibleUsers.map(user => (
-            <div key={user.id} className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Link
-                  to={`/profile/${user.id}`}
-                  className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-base font-bold text-primary shrink-0"
-                >
-                  {user.avatar || user.foto ? (
-                    <img src={user.avatar || user.foto} alt={user.name} className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    user.name?.charAt(0) || <UserRound size={18} />
+        <ul className="panel divide-y divide-border">
+          {visibleUsers.map((user) => (
+            <li key={user.id} className="flex items-center gap-4 px-4 py-3.5">
+              <Avatar name={user.name} src={user.avatar || user.foto} size="md" />
+              <div className="min-w-0 flex-1">
+                <Link to={`/profile/${user.id}`} className="block truncate font-semibold text-foreground hover:text-primary">
+                  {user.name}
+                </Link>
+                <p className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                  {user.institution && (
+                    <span className="inline-flex min-w-0 items-center gap-1">
+                      <Building2 size={12} className="shrink-0" aria-hidden />
+                      <span className="truncate">{user.institution}</span>
+                    </span>
                   )}
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <Link to={`/profile/${user.id}`} className="font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
-                    {user.name}
-                  </Link>
-                  <div className="mt-1 flex flex-col gap-1 text-xs text-muted-foreground">
-                    {user.institution && (
-                      <span className="inline-flex items-center gap-1 min-w-0">
-                        <Building2 size={12} className="shrink-0" />
-                        <span className="truncate">{user.institution}</span>
-                      </span>
-                    )}
-                    {user.course && (
-                      <span className="inline-flex items-center gap-1 min-w-0">
-                        <GraduationCap size={12} className="shrink-0" />
-                        <span className="truncate">{user.course}</span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-3">
-                    <RankBadge rank={user.rank} size="sm" />
-                  </div>
+                  {user.course && (
+                    <span className="inline-flex min-w-0 items-center gap-1">
+                      <GraduationCap size={12} className="shrink-0" aria-hidden />
+                      <span className="truncate">{user.course}</span>
+                    </span>
+                  )}
+                </p>
+              </div>
+              {user.rank && (
+                <div className="hidden w-28 sm:block">
+                  <RankBadge rank={user.rank} size="md" />
                 </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Link
-                  to={`/profile/${user.id}`}
-                  className="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  Perfil
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => handleStartChat(user.id)}
-                  disabled={startingChatUserId === user.id}
-                  className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {startingChatUserId === user.id ? <Loader2 size={15} className="animate-spin" /> : <MessageCircle size={15} />}
-                  Mensagem
-                </button>
-              </div>
-            </div>
+              )}
+              <button
+                type="button"
+                onClick={() => handleStartChat(user.id)}
+                disabled={startingChatUserId === user.id}
+                aria-label={`Enviar mensagem a ${user.name}`}
+                className="btn-secondary h-9 px-3"
+              >
+                {startingChatUserId === user.id ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <MessageCircle size={15} aria-hidden />}
+                <span className="hidden md:inline">Mensagem</span>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

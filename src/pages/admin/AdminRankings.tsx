@@ -74,11 +74,11 @@ const AdminRankings = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Rankings</h1>
+          <h1 className="page-title">Ranks</h1>
           <p className="text-muted-foreground mt-1">Top utilizadores por pontos (rank).</p>
         </div>
         <Button variant="outline" onClick={load} disabled={loading} className="gap-2">
-          <RefreshCcw size={16} /> Atualizar
+          <RefreshCcw size={16} /> Actualizar
         </Button>
       </div>
 

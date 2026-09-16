@@ -84,7 +84,7 @@ const AdminUsers = () => {
       const raw = unwrapApiResponseOrRaw<PageResponse<AdminUser>>(res as any);
       setData(isPageResponse(raw) ? raw : { content: [], page, size, totalElements: 0, totalPages: 0, last: true });
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e) ?? 'Falha ao carregar usuários.');
+      setError(getApiErrorMessage(e) ?? 'Não foi possível carregar os utilizadores.');
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ const AdminUsers = () => {
       const updated = unwrapApiResponseOrRaw<AdminUser>(res as any);
       if (updated && typeof updated === 'object') updateUserInState(updated);
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e) ?? 'Falha ao atualizar role.');
+      setError(getApiErrorMessage(e) ?? 'Não foi possível alterar o papel.');
     } finally {
       setBusyUserId(null);
     }
@@ -129,7 +129,7 @@ const AdminUsers = () => {
       const updated = unwrapApiResponseOrRaw<AdminUser>(res as any);
       if (updated && typeof updated === 'object') updateUserInState(updated);
     } catch (e: unknown) {
-      setError(getApiErrorMessage(e) ?? 'Falha ao atualizar verificação.');
+      setError(getApiErrorMessage(e) ?? 'Não foi possível alterar a verificação.');
     } finally {
       setBusyUserId(null);
     }
@@ -145,12 +145,12 @@ const AdminUsers = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Usuários</h1>
-          <p className="text-sm text-muted-foreground">Gerencie roles e verificação.</p>
+          <h1 className="page-title">Utilizadores</h1>
+          <p className="text-sm text-muted-foreground">Papéis e verificação das contas.</p>
         </div>
         <Button variant="outline" onClick={load} disabled={loading} className="gap-2">
           <RefreshCcw size={16} />
-          Atualizar
+          Actualizar
         </Button>
       </div>
 
@@ -167,7 +167,7 @@ const AdminUsers = () => {
             />
             <Button type="submit" className="gap-2">
               <Search size={16} />
-              Buscar
+              Pesquisar
             </Button>
           </form>
           {loading && <p className="text-xs text-muted-foreground mt-3">A carregar...</p>}
@@ -186,7 +186,7 @@ const AdminUsers = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Papel</TableHead>
                   <TableHead>Verificado</TableHead>
                   <TableHead>Rank</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -196,7 +196,7 @@ const AdminUsers = () => {
                 {data.content.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                      Nenhum usuário.
+                      Nenhum utilizador encontrado.
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -1,19 +1,18 @@
-import { Search, Bell, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowUpRight, ChevronDown, LogOut, Moon, Sun, User } from 'lucide-react';
+import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import { Avatar, Logo } from '@/shared/ui';
+import { cn } from '@/lib/utils';
+import { adminNavItems } from './adminNav';
 
 const periods = [
-  { label: '7 dias', value: '7d' },
-  { label: '30 dias', value: '30d' },
-  { label: '90 dias', value: '90d' },
-  { label: '1 ano', value: '1y' },
+  { label: 'Últimos 7 dias', value: '7d' },
+  { label: 'Últimos 30 dias', value: '30d' },
+  { label: 'Últimos 90 dias', value: '90d' },
+  { label: 'Último ano', value: '1y' },
 ] as const;
 
 interface AdminTopbarProps {
@@ -22,70 +21,91 @@ interface AdminTopbarProps {
 }
 
 export const AdminTopbar = ({ period, onPeriodChange }: AdminTopbarProps) => {
-  const [search, setSearch] = useState('');
-  const currentLabel = periods.find((p) => p.value === period)?.label ?? '30 dias';
+  const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+  const currentLabel = periods.find((p) => p.value === period)?.label ?? 'Últimos 30 dias';
 
   return (
-    <header className="h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-20">
-      {/* Search */}
-      <div className="relative w-full max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar..."
-          className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
-        />
-      </div>
+    <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between gap-3 px-4 md:px-6">
+        <div className="flex items-center gap-3">
+          <span className="lg:hidden">
+            <Logo to="/admin" compact />
+          </span>
+          <p className="text-sm font-semibold text-foreground">Administração</p>
+        </div>
 
-      <div className="flex items-center gap-3 ml-4">
-        {/* Period filter */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5 text-sm font-medium">
-              {currentLabel}
-              <ChevronDown size={14} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {periods.map((p) => (
-              <DropdownMenuItem
-                key={p.value}
-                onClick={() => onPeriodChange(p.value)}
-                className={period === p.value ? 'bg-primary/10 text-primary' : ''}
-              >
-                {p.label}
+        <div className="flex items-center gap-1.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <span className="hidden sm:inline">{currentLabel}</span>
+                <span className="sm:hidden">{period}</span>
+                <ChevronDown size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Período dos gráficos</DropdownMenuLabel>
+              {periods.map((p) => (
+                <DropdownMenuItem key={p.value} onClick={() => onPeriodChange(p.value)} className={period === p.value ? 'font-semibold' : ''}>
+                  {p.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}>
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-secondary" aria-label="Menu da conta">
+                <Avatar name={user?.name} src={user?.avatar} size="sm" />
+                <span className="hidden max-w-32 truncate text-sm font-medium text-foreground sm:inline">{user?.name ?? 'Administrador'}</span>
+                <ChevronDown size={14} className="text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard">
+                  <ArrowUpRight size={15} className="mr-2" /> Voltar à aplicação
+                </Link>
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
-        </Button>
-
-        {/* Avatar */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/60 transition-colors">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                A
-              </div>
-              <span className="text-sm font-medium text-foreground hidden sm:inline">Admin</span>
-              <ChevronDown size={14} className="text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>Meu Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Sair</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {user && (
+                <DropdownMenuItem asChild>
+                  <Link to={`/profile/${user.id}`}>
+                    <User size={15} className="mr-2" /> O meu perfil
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                <LogOut size={15} className="mr-2" /> Terminar sessão
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* Sem barra lateral abaixo de lg: navegação em linha */}
+      <nav aria-label="Administração" className="flex gap-1 overflow-x-auto px-4 pb-2 [scrollbar-width:none] lg:hidden">
+        {adminNavItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              cn(
+                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium',
+                isActive ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground',
+              )
+            }
+          >
+            <item.icon size={13} /> {item.label}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   );
 };
